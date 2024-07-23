@@ -1,0 +1,29 @@
+GTOa (4)
+
+ColorCorrector : IPNodeDefinition (1)
+{
+    node
+    {
+        string evaluationType = "filter"
+        string defaultName = "ColorCorrector"
+        string creator = "Sony Pictures Imageworks"
+        string documentation = "Color Corrector"
+        int userVisible = 1
+    }
+
+    render
+    {
+        int intermediate = 0
+    }
+
+    function
+    {
+        string name = "main"
+        string glsl = "file://${HERE}/color_corrector.glsl"
+    }
+
+    parameters
+    {
+        int refresh = 0
+    }
+}
