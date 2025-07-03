@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Delegate Manager &#8212; Review Plugin API (RPA) 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
+    <script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="RPA" href="rpa.html" />
+    <link rel="prev" title="RPA API Modules" href="index.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="delegate-manager">
+<h1>Delegate Manager<a class="headerlink" href="#delegate-manager" title="Link to this heading">¶</a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>RPA is driven by a powerful delegate manager, which makes it easy to observe and respond to any method invoked by the user.
+Rather than relying on PySide signals for each method, users can simply attach a pre or post delegate to react to user interactions. This streamlines the workflow and provides a flexible, centralized way to handle behavior across the system.</p>
+</section>
+<section id="why-delegate-manager">
+<h2>Why Delegate Manager?<a class="headerlink" href="#why-delegate-manager" title="Link to this heading">¶</a></h2>
+<p>Having a Delegate Manager per RPA module enables RPA users to,</p>
+<ol class="arabic simple">
+<li><p>Add the core delegate to each RPA methods</p></li>
+<li><p>Set permissions on each of the RPA methods</p></li>
+<li><p>Listen to any RPA method calls and decorate them with callables that will be called before or after the core delegate is called.</p></li>
+</ol>
+</section>
+<section id="what-is-a-delegate">
+<h2>What is a Delegate?<a class="headerlink" href="#what-is-a-delegate" title="Link to this heading">¶</a></h2>
+<p>A delegate is any Python callable that needs to be called when an RPA method
+is called.</p>
+</section>
+<section id="what-is-the-delegate-manager">
+<h2>What is the delegate-manager?<a class="headerlink" href="#what-is-the-delegate-manager" title="Link to this heading">¶</a></h2>
+<p>Every RPA module has a delegate manager. When a particular method of an RPA
+module is called, it will use it’s module’s delegate manager to call all the
+delegates that are associated with the method.</p>
+</section>
+<section id="types-of-delegates">
+<h2>Types of Delegates:<a class="headerlink" href="#types-of-delegates" title="Link to this heading">¶</a></h2>
+<p>Following are the 4 types of delegates that any RPA method can have. And the
+delegates will be called in the following order as well.</p>
+<ol class="arabic simple">
+<li><p>Permission Delegates</p></li>
+<li><p>Pre Delegates</p></li>
+<li><p>Core Delegate</p></li>
+<li><p>Post Delegates</p></li>
+</ol>
+<section id="permission-delegates">
+<h3>Permission Delegates:<a class="headerlink" href="#permission-delegates" title="Link to this heading">¶</a></h3>
+<p>An RPA method can have 0 or more permission delegates. In order for the
+Pre Delegates, Core Delegate and Post Delegates of a given method to be
+called, all the Permission Delegates of a given method needs to return True.
+Note that the given delegate(callable) will be receiving the same args and
+kwargs that are passed to the rpa_method.</p>
+<p>Note that the given delegate(callable) will be receiving the same args and
+kwargs that are passed to the rpa_method as its inputs.
+Hence signature of the callable should look like this,</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">permission_delegate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>Instead of *args and **kwargs you can have the actual args and kwargs
+based on the rpa_method.</p>
+</section>
+<section id="pre-delegates">
+<h3>Pre Delegates:<a class="headerlink" href="#pre-delegates" title="Link to this heading">¶</a></h3>
+<p>An RPA method can have 0 or more pre delegates. These are the delegates that
+get called before the core delegate is called. Note that the given
+delegate(callable) will be receiving the same args and kwargs that are passed
+to the rpa_method.</p>
+<p>Note that the given delegate(callable) will be receiving the same args and
+kwargs that are passed to the rpa_method as its inputs.
+Hence signature of the callable should look like this,</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">pre_delegate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>Instead of *args and **kwargs you can have the actual args and kwargs
+based on the rpa_method.</p>
+</section>
+<section id="core-delegate">
+<h3>Core Delegate:<a class="headerlink" href="#core-delegate" title="Link to this heading">¶</a></h3>
+<p>An RPA method can have 0 or 1 core delegate. This is the actual delegate that
+needs to be called when the user calls the RPA method. The output of this
+delegate is what is returned back to the called of the RPA method. If no
+delegate is present for a RPA method then None will be returned.</p>
+</section>
+<section id="post-delegates">
+<h3>Post Delegates:<a class="headerlink" href="#post-delegates" title="Link to this heading">¶</a></h3>
+<p>An RPA method can have 0 or more post delegates. These are the
+delegates that get called after the core delegate is called.</p>
+<p>Note that the given delegate(callable) will be receiving the output of
+the main delegate as it’s first argument and the same args and kwargs
+that are passed to the rpa_method as the subsequent inputs.
+Hence signature of the callable should look like this,</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">post_delegate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>Instead of *args and **kwargs you can have the actual args and kwargs
+based on the rpa_method.</p>
+</section>
+</section>
+</section>
+<dl class="py class">
+<dt class="sig sig-object py">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">rpa.delegate_mngr.</span></span><span class="sig-name descname"><span class="pre">DelegateMngr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logger</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/rpa/delegate_mngr.html#DelegateMngr"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">add_permission_delegate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rpa_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delegate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/rpa/delegate_mngr.html#DelegateMngr.add_permission_delegate"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>An RPA method can have 0 or more permission delegates. In order for
+the Pre Delegates, Core Delegate and Post Delegates of a given method
+to be called, all the Permission Delegates of a given method needs to
+return True. Note that the given delegate(callable) will be receiving
+the same args and kwargs that are passed to the rpa_method.</p>
+<p>Note that the given delegate(callable) will be receiving the same args
+and kwargs that are passed to the rpa_method as its inputs.
+Hence signature of the callable should look like this,</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">permission_delegate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>Instead of *args and **kwargs you can have the actual args and kwargs
+based on the rpa_method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rpa_method</strong> (<em>callable</em>) – A method of an RPA module</p></li>
+<li><p><strong>delegate</strong> (<em>callable</em>) – Callable that returns a boolean value of True or False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">add_post_delegate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rpa_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delegate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/rpa/delegate_mngr.html#DelegateMngr.add_post_delegate"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>An RPA method can have 0 or more post delegates. These are the
+delegates that get called after the core delegate is called.</p>
+<p>Note that the given delegate(callable) will be receiving the output of
+the main delegate as it’s first argument and the same args and kwargs
+that are passed to the rpa_method as the subsequent inputs.
+Hence signature of the callable should look like this,</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">post_delegate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>Instead of *args and **kwargs you can have the actual args and kwargs
+based on the rpa_method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rpa_method</strong> (<em>callable</em>) – A method of an RPA module</p></li>
+<li><p><strong>delegate</strong> (<em>callable</em>) – Callable that needs to be called after core delegate</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">add_pre_delegate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rpa_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delegate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/rpa/delegate_mngr.html#DelegateMngr.add_pre_delegate"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>An RPA method can have 0 or more pre delegates. These are the
+delegates that get called before the core delegate is called.
+Note that the given delegate(callable) will be receiving the same
+args and kwargs that are passed to the rpa_method.</p>
+<p>Note that the given delegate(callable) will be receiving the same
+args and kwargs that are passed to the rpa_method as its inputs.
+Hence signature of the callable should look like this,</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">pre_delegate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>Instead of *args and **kwargs you can have the actual args and kwargs
+based on the rpa_method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rpa_method</strong> (<em>callable</em>) – A method of an RPA module</p></li>
+<li><p><strong>delegate</strong> (<em>callable</em>) – Callable that needs to be called before core delegate</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rpa_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="reference internal" href="../_modules/rpa/delegate_mngr.html#DelegateMngr.call"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Call all the delegates associated with the given rpa_method with
+the provided args and kwargs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rpa_method</strong> (<em>callable</em>) – A method of an RPA module</p></li>
+<li><p><strong>args</strong> (<em>List</em><em>[</em><em>Any</em><em>]</em>) – List of arguments to the passed to the delegates</p></li>
+<li><p><strong>kwargs</strong> (<em>Dict</em>) – Dict of key-word arguments to the passed to the delegates</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Value returned by core delegate callable</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(Any)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">clear_permission_delegates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rpa_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/rpa/delegate_mngr.html#DelegateMngr.clear_permission_delegates"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Clears all permission delegates for the given rpa method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rpa_method</strong> (<em>callable</em>) – A method of an RPA module</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">clear_post_delegates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rpa_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/rpa/delegate_mngr.html#DelegateMngr.clear_post_delegates"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Clears all post delegates for the given rpa method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rpa_method</strong> (<em>callable</em>) – A method of an RPA module</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">clear_pre_delegates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rpa_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/rpa/delegate_mngr.html#DelegateMngr.clear_pre_delegates"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Clears all pre delegates for the given rpa method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rpa_method</strong> (<em>callable</em>) – A method of an RPA module</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">get_permission_delegates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rpa_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/rpa/delegate_mngr.html#DelegateMngr.get_permission_delegates"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Get list of all permission-delegates of the given rpa method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rpa_method</strong> (<em>callable</em>) – A method of an RPA module</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">get_post_delegates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rpa_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/rpa/delegate_mngr.html#DelegateMngr.get_post_delegates"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Get list of all post-delegates of the given rpa method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rpa_method</strong> (<em>callable</em>) – A method of an RPA module</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">get_pre_delegates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rpa_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/rpa/delegate_mngr.html#DelegateMngr.get_pre_delegates"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Get list of all pre-delegates of the given rpa method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rpa_method</strong> (<em>callable</em>) – A method of an RPA module</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">remove_permission_delegate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rpa_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delegate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/rpa/delegate_mngr.html#DelegateMngr.remove_permission_delegate"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Remove the given deletegate as a permission delegate for the given
+rpa method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rpa_method</strong> (<em>callable</em>) – A method of an RPA module</p></li>
+<li><p><strong>delegate</strong> (<em>callable</em>) – Callable that was previously set as a permission delegate
+of the given rpa_method.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">remove_post_delegate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rpa_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delegate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/rpa/delegate_mngr.html#DelegateMngr.remove_post_delegate"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Remove the given deletegate as a post delegate for the given
+rpa method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rpa_method</strong> (<em>callable</em>) – A method of an RPA module</p></li>
+<li><p><strong>delegate</strong> (<em>callable</em>) – Callable that was previously set as a post delegate
+of the given rpa_method.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">remove_pre_delegate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rpa_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delegate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/rpa/delegate_mngr.html#DelegateMngr.remove_pre_delegate"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Remove the given deletegate as a pre delegate for the given
+rpa method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rpa_method</strong> (<em>callable</em>) – A method of an RPA module</p></li>
+<li><p><strong>delegate</strong> (<em>callable</em>) – Callable that was previously set as a pre delegate
+of the given rpa_method.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Review Plugin API (RPA)</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">RPA API Modules</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Delegate Manager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rpa.html">RPA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="session_api.html">Session API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="timeline_api.html">Timeline API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="viewport_api.html">Viewport API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="color_api.html">Color API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="annotation_api.html">Annotation API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../rpa_widgets.html">RPA Widgets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../open_rv_implementation.html">Open RV Implmentation</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">RPA API Modules</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">RPA API Modules</a></li>
+      <li>Next: <a href="rpa.html" title="next chapter">RPA</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Sony Pictures Imageworks (SPI).
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../_sources/rpa_api_modules/delegate_manager.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

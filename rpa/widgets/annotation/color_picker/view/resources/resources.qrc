@@ -1,0 +1,10 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource>
+        <file>./plus28.png</file>
+        <file>./dropper16.png</file>
+        <file>./x16.png</file>
+        <file>./heart28.png</file>
+        <file>./controls28.png</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Annotation API &#8212; Review Plugin API (RPA) 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
+    <script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="RPA Widgets" href="../rpa_widgets.html" />
+    <link rel="prev" title="Color API" href="color_api.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="annotation-api">
+<h1>Annotation API<a class="headerlink" href="#annotation-api" title="Link to this heading">¶</a></h1>
+<p>Manage clip annotations which include Strokes and Texts.</p>
+<p>Annotations can only be set on the particular Frame of a Clip.</p>
+<p>Annotations can either be read-write or read-only.</p>
+<p>A Frame of a clip can have multiple Read-Write Annotations and it can
+have only 1 Read-Only Annotation.</p>
+</section>
+<dl class="py class">
+<dt class="sig sig-object py">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">rpa.api.annotation_api.</span></span><span class="sig-name descname"><span class="pre">AnnotationApi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/rpa/api/annotation_api.html#AnnotationApi"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QObject</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">append_strokes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clip_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strokes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Stroke</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/rpa/api/annotation_api.html#AnnotationApi.append_strokes"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This method adds new strokes to a specified clip and frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>clip_id</strong> (<em>str</em>) – Id of a clip.</p></li>
+<li><p><strong>frame</strong> (<em>int</em>) – Frame number.</p></li>
+<li><p><strong>strokes</strong> (<em>list</em><em>[</em><em>Stroke</em><em>]</em>) – List of RPA Stroke objects to add to the frame.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if success False otherwise</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(bool)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">append_texts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clip_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">texts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Text</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/rpa/api/annotation_api.html#AnnotationApi.append_texts"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This method adds new text annotations to the specified clip and frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>clip_id</strong> (<em>str</em>) – Id of a clip.</p></li>
+<li><p><strong>frame</strong> (<em>int</em>) – Frame number.</p></li>
+<li><p><strong>texts</strong> (<em>list</em><em>[</em><em>Text</em><em>]</em>) – List of RPA Text objects to add to the frame.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if success False otherwise</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(bool)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">append_transient_point</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clip_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">token</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stroke_point</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">StrokePoint</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_line</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/rpa/api/annotation_api.html#AnnotationApi.append_transient_point"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This methods adds a transient point(temporary point for drawing)
+to a specified frame in a clip. These points are used to build or
+update a stroke during the drawing process. If the token already
+exists, the point is appended to the stroke
+associated with that token.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>clip_id</strong> (<em>str</em>) – Id of a clip where the transient point will be added.</p></li>
+<li><p><strong>frame</strong> (<em>int</em>) – frame number where the point should be added.</p></li>
+<li><p><strong>token</strong> (<em>str</em>) – A unique identifier that associates the transient point
+with a specified drawing stroke.</p></li>
+<li><p><strong>stroke_point</strong> (<em>StrokePoint</em>) – RPA StrokePoint that needs to be appended to the transient
+stroke that is created by means of appending transient points.</p></li>
+<li><p><strong>is_line</strong> (<em>bool</em>) – If the is_line flag is True, the trasient stroke is a line,
+only 2 points at most will be kept.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if success False otherwise</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(bool)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">clear_frame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clip_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/rpa/api/annotation_api.html#AnnotationApi.clear_frame"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This method clears all annotations in a specified clip and frame.
+This differs from delete, when you do undo/redo, this still brings
+back the cleared annotations, but delete will not.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>clip_id</strong> (<em>str</em>) – Id of a clip.</p></li>
+<li><p><strong>frame</strong> (<em>int</em>) – Frame number where annotations should be cleared.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if success False otherwise</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(bool)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">delegate_mngr</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DelegateMngr</span></em></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">delete_ro_annotations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clips</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/rpa/api/annotation_api.html#AnnotationApi.delete_ro_annotations"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This method deletes the read-only annotations from given clips.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>clips</strong> (<em>list</em>) – list of clip ids.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if success False otherwise</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(bool)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">delete_rw_annotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clip_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/rpa/api/annotation_api.html#AnnotationApi.delete_rw_annotation"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This method deletes the read-write annotation from a specified clip and frame.
+Unlike clear, delete doesn’t bring back the annotation on undo.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>clip_id</strong> (<em>str</em>) – Id of a clip.</p></li>
+<li><p><strong>frame</strong> (<em>int</em>) – Frame number.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if success False otherwise</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(bool)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">delete_transient_points</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clip_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">token</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/rpa/api/annotation_api.html#AnnotationApi.delete_transient_points"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Removes all transient points associated with a specific RPA Stroke in
+a given clip and frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>clip_id</strong> (<em>str</em>) – Id of a clip where the transient points should be deleted.</p></li>
+<li><p><strong>frame</strong> (<em>int</em>) – Frame number where the points should be deleted.</p></li>
+<li><p><strong>token</strong> (<em>str</em>) – The unique identifier associated with the stroke
+whose points are to be deleted.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if success False otherwise</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(bool)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">get_ro_annotations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clip_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Annotation</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/rpa/api/annotation_api.html#AnnotationApi.get_ro_annotations"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Retrieves the list of read-only annotations for the
+specified clip and frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>clip_id</strong> (<em>str</em>) – Id of a clip.</p></li>
+<li><p><strong>frame</strong> (<em>int</em>) – Clip frame number</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Read-only Annotations(strokes and texts) objects.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(list)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">get_ro_frames</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clip_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/rpa/api/annotation_api.html#AnnotationApi.get_ro_frames"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Retrieves the frames that contain read-only annotations within
+a specified clip. These are frames where annotations cannot be modified
+or erased and are used for viewing only.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>clip_id</strong> (<em>str</em>) – Id of a clip.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A list of frame numbers that contain read-only annotations.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">get_rw_annotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clip_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Annotation</span></span></span><a class="reference internal" href="../_modules/rpa/api/annotation_api.html#AnnotationApi.get_rw_annotation"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Retrieves the read-write annotations for a specified clip and frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>clip_id</strong> (<em>str</em>) – Id of a clip.</p></li>
+<li><p><strong>frame</strong> (<em>int</em>) – frame number.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>RPA Annotation(strokes and texts) object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Annotation(RPA Annotation)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">get_rw_frames</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clip_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/rpa/api/annotation_api.html#AnnotationApi.get_rw_frames"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Retrieves the frames that contain read-write annotations within
+a specified clip. There are frames where annotations can be modified
+or erased.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>clip_id</strong> (<em>str</em>) – Id of a clip.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A list of frame numbers that contain read-write annotations.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">get_transient_stroke</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clip_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">token</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/rpa/api/annotation_api.html#AnnotationApi.get_transient_stroke"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Retrieves all transient points associated with a specific stroke in
+a given clip and frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>clip_id</strong> (<em>str</em>) – Id of a clip where the transient stroke exists.</p></li>
+<li><p><strong>frame</strong> (<em>int</em>) – Frame number where the stroke is located.</p></li>
+<li><p><strong>token</strong> (<em>str</em>) – A unique identifier associated with the stroke
+that needs to be retrieved.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The RPA Stroke that is created by means of appending
+transient stroke-points.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Stroke</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">redo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clip_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/rpa/api/annotation_api.html#AnnotationApi.redo"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This method reapplies the most recent undone annotation change
+in the specified clip and frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>clip_id</strong> (<em>str</em>) – Id of a clip.</p></li>
+<li><p><strong>frame</strong> (<em>int</em>) – Frame number.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if success False otherwise</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(bool)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">set_laser_pointer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">point</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Color</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/rpa/api/annotation_api.html#AnnotationApi.set_laser_pointer"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This method sets a laser pointer on the specified clip and frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>id</strong> (<em>str</em>) – Id of the laser pointer.</p></li>
+<li><p><strong>point</strong> (<em>Point</em>) – RPA Point object holding the normalized (0.0 to 1.0) position
+where the laser pointer should be placed.</p></li>
+<li><p><strong>color</strong> (<em>Color</em>) – The RPA Color objectfor the laset pointer.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if success False otherwise</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(bool)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">set_pointer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stroke_point</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">StrokePoint</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/rpa/api/annotation_api.html#AnnotationApi.set_pointer"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This method sets a pen pointer on the specified clip and frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>stroke_point</strong> (<em>StrokePoint</em>) – The RPA StrokePoint that needs to be used to draw the pointer.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if success False otherwise</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(bool)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">set_ro_annotations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">annotations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/rpa/api/annotation_api.html#AnnotationApi.set_ro_annotations"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Set the list of read-only annotaitons that need to be set for the
+clips and their respective frames as mentioned in the given dict.</p>
+<p>Following is an example of how the annotations dict should look like,</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">annotations</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;clip_id_1&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="n">frame_1</span><span class="p">:</span> <span class="p">[</span><span class="n">Annotation</span><span class="p">(),</span> <span class="n">Annotation</span><span class="p">(),</span> <span class="n">Annotation</span><span class="p">()]</span>
+        <span class="n">frame_2</span><span class="p">:</span> <span class="p">[</span><span class="n">Annotation</span><span class="p">(),</span> <span class="n">Annotation</span><span class="p">(),</span> <span class="n">Annotation</span><span class="p">()]</span>
+        <span class="n">frame_3</span><span class="p">:</span> <span class="p">[</span><span class="n">Annotation</span><span class="p">(),</span> <span class="n">Annotation</span><span class="p">()]</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;clip_id_2&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="n">frame_1</span><span class="p">:</span> <span class="p">[</span><span class="n">Annotation</span><span class="p">(),</span> <span class="n">Annotation</span><span class="p">(),</span> <span class="n">Annotation</span><span class="p">()]</span>
+        <span class="n">frame_2</span><span class="p">:</span> <span class="p">[</span><span class="n">Annotation</span><span class="p">(),</span> <span class="n">Annotation</span><span class="p">(),</span> <span class="n">Annotation</span><span class="p">()]</span>
+        <span class="n">frame_3</span><span class="p">:</span> <span class="p">[</span><span class="n">Annotation</span><span class="p">(),</span> <span class="n">Annotation</span><span class="p">()]</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>annotations</strong> (<em>Dict</em>) – Dictionary of annotations</p>
+</dd>
+</dl>
+<p>Returns: (bool) : True if success False otherwise.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">set_rw_annotations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">annotations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/rpa/api/annotation_api.html#AnnotationApi.set_rw_annotations"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Sets the read-write annotations for the clips and their respective frames as
+given in the dictionary.</p>
+<p>Here is an example of how the annotations dict should look like,</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;clip_id_1&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="n">frame_1</span><span class="p">:</span> <span class="n">Annotation</span><span class="p">()</span>
+        <span class="n">frame_2</span><span class="p">:</span> <span class="n">Annotation</span><span class="p">()</span>
+        <span class="n">frame_3</span><span class="p">:</span> <span class="n">Annotation</span><span class="p">()</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;clip_id_2&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="n">frame_1</span><span class="p">:</span> <span class="n">Annotation</span><span class="p">()</span>
+        <span class="n">frame_2</span><span class="p">:</span> <span class="n">Annotation</span><span class="p">()</span>
+        <span class="n">frame_3</span><span class="p">:</span> <span class="n">Annotation</span><span class="p">()</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>annotatoins</strong> (<em>Dict</em>) – Annotaions that need to be set on clips and</p></li>
+<li><p><strong>frames.</strong> (<em>their respective</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True is success else False</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(bool)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">set_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clip_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Text</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/rpa/api/annotation_api.html#AnnotationApi.set_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Based on the text properties defined in the text object
+set the text as an annotation.</p>
+<p>If a text-annotation already exists at the same position as the
+position in given text object, then that existing text annotation’s
+text and properties will be updated with the text and properties of
+the the given text-object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>clip_id</strong> (<em>str</em>) – Id of a clip.</p></li>
+<li><p><strong>frame</strong> (<em>int</em>) – Frame number.</p></li>
+<li><p><strong>text</strong> (<em>Text</em>) – RPA Text object</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if success else False</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(bool)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clip_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/rpa/api/annotation_api.html#AnnotationApi.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Reverts the most recent annotation change in the specified
+clip and frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>clip_id</strong> (<em>str</em>) – Id of a clip.</p></li>
+<li><p><strong>frame</strong> (<em>int</em>) – Frame number.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if success False otherwise</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(bool)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Review Plugin API (RPA)</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">RPA API Modules</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="delegate_manager.html">Delegate Manager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rpa.html">RPA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="session_api.html">Session API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="timeline_api.html">Timeline API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="viewport_api.html">Viewport API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="color_api.html">Color API</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Annotation API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../rpa_widgets.html">RPA Widgets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../open_rv_implementation.html">Open RV Implmentation</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">RPA API Modules</a><ul>
+      <li>Previous: <a href="color_api.html" title="previous chapter">Color API</a></li>
+      <li>Next: <a href="../rpa_widgets.html" title="next chapter">RPA Widgets</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Sony Pictures Imageworks (SPI).
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../_sources/rpa_api_modules/annotation_api.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

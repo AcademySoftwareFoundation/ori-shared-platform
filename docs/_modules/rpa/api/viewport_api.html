@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>rpa.api.viewport_api &#8212; Review Plugin API (RPA) 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for rpa.api.viewport_api</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Viewport API</span>
+<span class="sd">============</span>
+
+<span class="sd">Manage viewport transforms and overlays.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">PySide2</span> <span class="kn">import</span> <span class="n">QtCore</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Dict</span>
+<span class="kn">from</span> <span class="nn">rpa.delegate_mngr</span> <span class="kn">import</span> <span class="n">DelegateMngr</span>
+<span class="kn">from</span> <span class="nn">rpa.session_state.utils</span> <span class="kn">import</span> <span class="n">Point</span>
+
+
+<div class="viewcode-block" id="ViewportApi">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi">[docs]</a>
+<span class="k">class</span> <span class="nc">ViewportApi</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QObject</span><span class="p">):</span>
+    <span class="n">SIG_CURRENT_CLIP_GEOMETRY_CHANGED</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span> <span class="c1"># geometry</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logger</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span> <span class="o">=</span> <span class="n">DelegateMngr</span><span class="p">(</span><span class="n">logger</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">delegate_mngr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span>
+
+<div class="viewcode-block" id="ViewportApi.create_html_overlay">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.create_html_overlay">[docs]</a>
+    <span class="k">def</span> <span class="nf">create_html_overlay</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">html_overlay</span><span class="p">:</span><span class="n">Dict</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a floating HTML based overlay on the viewport.</span>
+<span class="sd">        The data required to create the HTML overlay needs to be passed in</span>
+<span class="sd">        as a dictionary. Following is an example dict with all the key-value</span>
+<span class="sd">        pairs that are expected.</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            html_overaly = {</span>
+<span class="sd">                &quot;html&quot;: &quot;&lt;span style=&#39;color: white; font-size:42px&#39;&gt;Hello RPA!&lt;/span&gt;&quot;,</span>
+<span class="sd">                &quot;x&quot;: 0.5,</span>
+<span class="sd">                &quot;y&quot;: 0.5,</span>
+<span class="sd">                &quot;width&quot;: 500,</span>
+<span class="sd">                &quot;height&quot;: 200,</span>
+<span class="sd">                &quot;is_visible&quot;: True</span>
+<span class="sd">            }</span>
+
+<span class="sd">        &quot;html&quot; value need to be the string value that needs to be overlayed on</span>
+<span class="sd">        the viewport.</span>
+
+<span class="sd">        &quot;x&quot; and &quot;y&quot; values need to passed as normalized 0.0 to 1.0 values.</span>
+<span class="sd">        With (0.0, 0.0) at the lower-left and (1.0, 1.0) at the upper-right.</span>
+
+<span class="sd">        &quot;width&quot; and &quot;height&quot; need to be pixel values.</span>
+
+<span class="sd">        &quot;is_visible&quot; acccepts a boolean based on which the visibility of the HTML</span>
+<span class="sd">        overlay can be controller.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            html_overaly (Dict): Data required to create HTML overlay.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (str): Unique id of the created HTML overlay.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">create_html_overlay</span><span class="p">,</span> <span class="p">[</span><span class="n">html_overlay</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ViewportApi.set_html_overlay">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.set_html_overlay">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_html_overlay</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">html_overlay</span><span class="p">:</span><span class="n">Dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the properties of existing HTML overlays. The properties can be</span>
+<span class="sd">        set by passing a dict with the key-value pairs of the properties that</span>
+<span class="sd">        need to be chagned.</span>
+
+<span class="sd">        The passed in the dict should have one or more of the following example</span>
+<span class="sd">        dictionary,</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            html_overaly = {</span>
+<span class="sd">                &quot;html&quot;: &quot;&lt;span style=&#39;color: white; font-size:42px&#39;&gt;Hello RPA!&lt;/span&gt;&quot;,</span>
+<span class="sd">                &quot;x&quot;: 0.5,</span>
+<span class="sd">                &quot;y&quot;: 0.5,</span>
+<span class="sd">                &quot;width&quot;: 500,</span>
+<span class="sd">                &quot;height&quot;: 200,</span>
+<span class="sd">                &quot;is_visible&quot;: True</span>
+<span class="sd">            }</span>
+
+<span class="sd">        &quot;html&quot; value needs to be the string value that needs to be overlayed on</span>
+<span class="sd">        the viewport.</span>
+
+<span class="sd">        &quot;x&quot; and &quot;y&quot; values need to passed as normalized 0.0 to 1.0 values.</span>
+<span class="sd">        With (0.0, 0.0) at the lower-left and (1.0, 1.0) at the upper-right.</span>
+
+<span class="sd">        &quot;width&quot; and &quot;height&quot; need to be pixel values.</span>
+
+<span class="sd">        &quot;is_visible&quot; acccepts a boolean based on which the visibility of the HTML</span>
+<span class="sd">        overlay can be controller.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            id (str):</span>
+<span class="sd">                Unique id of the HTML overaly whose properties need to be set</span>
+
+<span class="sd">            html_overlay (dict):</span>
+<span class="sd">                Data containing HTML overlay properties to set.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool): True if success else False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_html_overlay</span><span class="p">,</span> <span class="p">[</span><span class="nb">id</span><span class="p">,</span> <span class="n">html_overlay</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ViewportApi.get_html_overlay_ids">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.get_html_overlay_ids">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_html_overlay_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns unique ids of all the HTML overlays currently present in the</span>
+<span class="sd">        session.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (List[str]): List of HTML overlay ids</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_html_overlay_ids</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ViewportApi.get_html_overlay">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.get_html_overlay">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_html_overlay</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the data of the HTML overlay whose id has been provided.</span>
+<span class="sd">        Following is an example of how the returned dict will look like,</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            {</span>
+<span class="sd">                &quot;html&quot;: &quot;&lt;span style=&#39;color: white; font-size:42px&#39;&gt;Hello RPA!&lt;/span&gt;&quot;,</span>
+<span class="sd">                &quot;x&quot;: 0.5,</span>
+<span class="sd">                &quot;y&quot;: 0.5,</span>
+<span class="sd">                &quot;width&quot;: 500,</span>
+<span class="sd">                &quot;height&quot;: 200,</span>
+<span class="sd">                &quot;is_visible&quot;: True</span>
+<span class="sd">            }</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            id (str): Unique id of a HTML overlay</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (Dict): Data of the HTML overlay.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_html_overlay</span><span class="p">,</span> <span class="p">[</span><span class="nb">id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ViewportApi.delete_html_overlays">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.delete_html_overlays">[docs]</a>
+    <span class="k">def</span> <span class="nf">delete_html_overlays</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ids</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delets the HTML overlays whose ids have been provided.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ids (List[str]): Ids of HTML overlays.</span>
+
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool): True if success False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delete_html_overlays</span><span class="p">,</span> <span class="p">[</span><span class="n">ids</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ViewportApi.set_mask">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.set_mask">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set a layer of mask on top of the current view</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            mask (Optional[str]):</span>
+<span class="sd">                A mask can either be an image path or a recipe to render.</span>
+<span class="sd">                A mask with image path will be rendered with its respective</span>
+<span class="sd">                image coordinates matching the viewing media width and height.</span>
+<span class="sd">                A mask recipe is defined with a desired aspect ratio and opacity.</span>
+<span class="sd">                The recipe format is as follows: &quot;$aspect_ratio@$opacity&quot;</span>
+<span class="sd">                There can be multiple recipes for a particular mask.</span>
+<span class="sd">                In these instances, &quot;&amp;&quot; can be used to denote the recipe list.</span>
+<span class="sd">                Examples:</span>
+<span class="sd">                    &quot;/some/path/to/mask/images/mask_example.tif&quot;</span>
+<span class="sd">                    &quot;2.35@0.5&quot;</span>
+<span class="sd">                    &quot;1.755@1.0&amp;1.655@0.7&quot;</span>
+<span class="sd">                The mask will be rendered on top of the current view.</span>
+<span class="sd">                When None, any existing rendered mask will be removed.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_mask</span><span class="p">,</span> <span class="p">[</span><span class="n">mask</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ViewportApi.start_drag">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.start_drag">[docs]</a>
+    <span class="k">def</span> <span class="nf">start_drag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pointer</span><span class="p">:</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">])</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the starting reference pointer position for translation by</span>
+<span class="sd">        drag operation. After this method, use drag method to drag and</span>
+<span class="sd">        use finally end_drag to complete the drag operation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pointer (Tuple[float, float]):</span>
+<span class="sd">                Screen space (x,y) coordinate defining the start position</span>
+<span class="sd">                of drag operation for translation.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start_drag</span><span class="p">,</span> <span class="p">[</span><span class="n">pointer</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ViewportApi.drag">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.drag">[docs]</a>
+    <span class="k">def</span> <span class="nf">drag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pointer</span><span class="p">:</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">])</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Performs translation based on the given pointer position while</span>
+<span class="sd">        in drag operation. start_drag method needs to be called before calling</span>
+<span class="sd">        this method. And end_drag method needs to be called after the drag</span>
+<span class="sd">        operation is completed.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pointer (Tuple[float, float]):</span>
+<span class="sd">                Screen space (x,y) coordinate defining the current position</span>
+<span class="sd">                while in drag operation for translation.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drag</span><span class="p">,</span> <span class="p">[</span><span class="n">pointer</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ViewportApi.end_drag">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.end_drag">[docs]</a>
+    <span class="k">def</span> <span class="nf">end_drag</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Ends translation by drag operation, and resets the reference</span>
+<span class="sd">        pointer position.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">end_drag</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ViewportApi.scale_on_point">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.scale_on_point">[docs]</a>
+    <span class="k">def</span> <span class="nf">scale_on_point</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">scale_point</span><span class="p">:</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">delta</span><span class="p">:</span><span class="nb">float</span><span class="p">,</span> <span class="n">speed</span><span class="p">:</span><span class="nb">float</span><span class="p">,</span>
+        <span class="n">vertical_lock</span><span class="p">:</span><span class="nb">bool</span><span class="p">,</span> <span class="n">horizontal_lock</span><span class="p">:</span><span class="nb">bool</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Allow scale in/out at a specific point. Possible to lock the view from</span>
+<span class="sd">        scaling vertically or horizontally.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            scale_point(Tuple[float, float]):</span>
+<span class="sd">                Screen space (x,y) coordinate position to scale in/out</span>
+<span class="sd">            delta (float):</span>
+<span class="sd">                1.0 for scale in operation, and -1.0 for scale out operation</span>
+<span class="sd">            speed (float):</span>
+<span class="sd">                Speed at which scale operation occurs, value set by</span>
+<span class="sd">                some user input</span>
+<span class="sd">            vertical_lock (bool):</span>
+<span class="sd">                View locked from scaling vertically when True</span>
+<span class="sd">            horizontal_lock (bool):</span>
+<span class="sd">                View locked from scaling horizontally when True</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scale_on_point</span><span class="p">,</span>
+            <span class="p">[</span><span class="n">scale_point</span><span class="p">,</span> <span class="n">delta</span><span class="p">,</span> <span class="n">speed</span><span class="p">,</span> <span class="n">vertical_lock</span><span class="p">,</span> <span class="n">horizontal_lock</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ViewportApi.set_scale">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.set_scale">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_scale</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">horizontal</span><span class="p">:</span><span class="nb">float</span><span class="p">,</span> <span class="n">vertical</span><span class="p">:</span><span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the horizontal and/or vertical factor to scale in/out of viewport</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            horizontal (float): Horizontal scale factor</span>
+<span class="sd">            vertical (float):</span>
+<span class="sd">                Vertical scale factor. When None, it will</span>
+<span class="sd">                be the same value as Horizontal scale factor.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_scale</span><span class="p">,</span> <span class="p">[</span><span class="n">horizontal</span><span class="p">,</span> <span class="n">vertical</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ViewportApi.get_scale">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.get_scale">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_scale</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the horizontal and vertical scale values of viewport.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[float, float]]: Horizontal and Version scale values</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_scale</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ViewportApi.set_translation">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.set_translation">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_translation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">horizontal</span><span class="p">:</span><span class="nb">float</span><span class="p">,</span> <span class="n">vertical</span><span class="p">:</span><span class="nb">float</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the horizontal and/or vertical factor to translation in/out of viewport</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            horizontal (float): Horizontal translation factor</span>
+<span class="sd">            vertical (float): Vertical translation factor.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_translation</span><span class="p">,</span> <span class="p">[</span><span class="n">horizontal</span><span class="p">,</span> <span class="n">vertical</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ViewportApi.get_translation">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.get_translation">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_translation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the horizontal and vertical translation values of viewport.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[float, float]]: Horizontal and Version translation values</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_translation</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ViewportApi.flip_x">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.flip_x">[docs]</a>
+    <span class="k">def</span> <span class="nf">flip_x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span><span class="nb">bool</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Flip the current view horizontally or default to original view,</span>
+<span class="sd">        given the state.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            state (bool): flip display view horizontally when True</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flip_x</span><span class="p">,</span> <span class="p">[</span><span class="n">state</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ViewportApi.flip_y">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.flip_y">[docs]</a>
+    <span class="k">def</span> <span class="nf">flip_y</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span><span class="nb">bool</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Flip the current view vertically or default to original view,</span>
+<span class="sd">        given the state.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            state (bool): flip display view vertically when True</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flip_y</span><span class="p">,</span> <span class="p">[</span><span class="n">state</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ViewportApi.fit_to_window">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.fit_to_window">[docs]</a>
+    <span class="k">def</span> <span class="nf">fit_to_window</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span><span class="nb">bool</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fit the current media to the width and height of viewing window space</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            state (bool): Enable fitting to window when True</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit_to_window</span><span class="p">,</span> <span class="p">[</span><span class="n">state</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ViewportApi.fit_to_width">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.fit_to_width">[docs]</a>
+    <span class="k">def</span> <span class="nf">fit_to_width</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span><span class="nb">bool</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fit the current media to the width of viewing window space</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            state (bool): Enable fit to width when True</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit_to_width</span><span class="p">,</span> <span class="p">[</span><span class="n">state</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ViewportApi.fit_to_height">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.fit_to_height">[docs]</a>
+    <span class="k">def</span> <span class="nf">fit_to_height</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span><span class="nb">bool</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fit the current media to the height of viewing window space</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            state (bool): Enable fit to height when True</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit_to_height</span><span class="p">,</span> <span class="p">[</span><span class="n">state</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ViewportApi.display_msg">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.display_msg">[docs]</a>
+    <span class="k">def</span> <span class="nf">display_msg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">duration</span><span class="p">:</span><span class="nb">float</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Display the given message on the viewport for the given duration.</span>
+<span class="sd">        The messages may indicate current status, or other user actions.</span>
+<span class="sd">        The displayed message will disappear after the given duration has passed.</span>
+<span class="sd">        The duration is in the unit of seconds.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            message (str): The message to be displayed on the viewport</span>
+<span class="sd">            duration (float): The amount of time to display the message in seconds.</span>
+<span class="sd">                              When not given, it defaults to 2.0 seconds.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">display_msg</span><span class="p">,</span> <span class="p">[</span><span class="n">message</span><span class="p">,</span> <span class="n">duration</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ViewportApi.get_current_clip_geometry">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.get_current_clip_geometry">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_current_clip_geometry</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a list of (x,y) image corners for the current clip</span>
+<span class="sd">        in the viewport.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Optional[List[Tuple[float, float]]]:</span>
+<span class="sd">                None if there is no current clip otherwise returns a list of</span>
+<span class="sd">                the image corners of the current clip.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_current_clip_geometry</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ViewportApi.is_feedback_visible">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.is_feedback_visible">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_feedback_visible</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">category</span><span class="p">:</span><span class="nb">int</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method checks whether annotations and ccs(given the category) in the current session across</span>
+<span class="sd">        all clips and their corresponding frames are allowed</span>
+<span class="sd">        to be visible or not.</span>
+<span class="sd">        Category is defined as follows</span>
+<span class="sd">        1 - All</span>
+<span class="sd">        2 - Strokes</span>
+<span class="sd">        3 - Texts</span>
+<span class="sd">        4 - Clip CCs</span>
+<span class="sd">        5 - Frame CCs</span>
+<span class="sd">        6 - Region CCs</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            category(int): Integer that represents the category.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            bool : True if annotations and ccs are visible, else False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">is_feedback_visible</span><span class="p">,</span> <span class="p">[</span><span class="n">category</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ViewportApi.set_feedback_visibility">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.set_feedback_visibility">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_feedback_visibility</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">category</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span><span class="nb">bool</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Enable users to set visibility of all annotations and ccs in the current session.</span>
+<span class="sd">        Category is as follows.</span>
+<span class="sd">        1 - All</span>
+<span class="sd">        2 - Strokes</span>
+<span class="sd">        3 - Texts</span>
+<span class="sd">        4 - Clip CCs</span>
+<span class="sd">        5 - Frame CCs</span>
+<span class="sd">        6 - Region CCs</span>
+<span class="sd">        Args:</span>
+<span class="sd">            category (int) : Integer that represents the category that needs to be set.</span>
+<span class="sd">            value (bool) : Flag to set visibility of all annotaions and ccs.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_feedback_visibility</span><span class="p">,</span> <span class="p">[</span><span class="n">category</span><span class="p">,</span> <span class="n">value</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ViewportApi.set_text_cursor">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.set_text_cursor">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_text_cursor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">:</span><span class="n">Point</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span><span class="nb">int</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Draw a text-cursor line on the viewport.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            position (RPA Point): Position of the cursor</span>
+<span class="sd">            size(int): Size of the cursor</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool): True if success else False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_text_cursor</span><span class="p">,</span> <span class="p">[</span><span class="n">position</span><span class="p">,</span> <span class="n">size</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ViewportApi.is_text_cursor_set">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.is_text_cursor_set">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_text_cursor_set</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if text-cursor is set on viewport.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool): Returns True if text-cursor is set on viewport.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">is_text_cursor_set</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ViewportApi.unset_text_cursor">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.unset_text_cursor">[docs]</a>
+    <span class="k">def</span> <span class="nf">unset_text_cursor</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove text cursor from viewport.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            position (RPA Point): Position of the cursor</span>
+<span class="sd">            size(int): Size of the cursor</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool): True if success else False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unset_text_cursor</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ViewportApi.set_cross_hair_cursor">
+<a class="viewcode-back" href="../../../rpa_api_modules/viewport_api.html#rpa.api.viewport_api.ViewportApi.set_cross_hair_cursor">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_cross_hair_cursor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">:</span><span class="n">Point</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Draw a cross_hair-cursor line on the viewport.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            position (RPA Point): Position of the cursor</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool): True if success else False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_cross_hair_cursor</span><span class="p">,</span> <span class="p">[</span><span class="n">position</span><span class="p">])</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Review Plugin API (RPA)</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rpa_api_modules/index.html">RPA API Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rpa_widgets.html">RPA Widgets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../open_rv_implementation.html">Open RV Implmentation</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Sony Pictures Imageworks (SPI).
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

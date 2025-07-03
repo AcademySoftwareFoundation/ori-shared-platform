@@ -1,0 +1,18 @@
+package: Review Plugin Api (RPA) Core Implementation
+author: Sony Pictures Imageworks
+organization: Sony Pictures Imageworks
+version: 1.0
+requires: ''
+rv: 3.12.9
+openrv: 1.0.0
+optional: true
+
+modes:
+  - file: rpa_core_mode.py
+    menu: ''
+    shortcut: ''
+    event: ''
+    load: immediate
+
+description:
+    <p>Review Plugin Api (RPA) Core implementation</p>

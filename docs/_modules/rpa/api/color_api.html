@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>rpa.api.color_api &#8212; Review Plugin API (RPA) 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for rpa.api.color_api</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Color API</span>
+<span class="sd">=========</span>
+
+<span class="sd">Manage viewport color-space and clip color-corrections.</span>
+
+<span class="sd">Color-Corrections can be set either be set on the entire clip or on a particular Frame.</span>
+
+<span class="sd">Multiple Clip-level color-corrections can be set on a particular clip and multiple</span>
+<span class="sd">frame-level color-corrections can be set on a particular frame of a clip.</span>
+
+<span class="sd">A color-correction can either be read-only or read-write.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">rpa.delegate_mngr</span> <span class="kn">import</span> <span class="n">DelegateMngr</span>
+<span class="kn">from</span> <span class="nn">rpa.session_state.color_corrections</span> <span class="kn">import</span> \
+    <span class="n">ColorTimer</span><span class="p">,</span> <span class="n">Grade</span><span class="p">,</span> <span class="n">ColorCorrection</span>
+<span class="kn">from</span> <span class="nn">PySide2</span> <span class="kn">import</span> <span class="n">QtCore</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Tuple</span>
+
+
+<div class="viewcode-block" id="ColorApi">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi">[docs]</a>
+<span class="k">class</span> <span class="nc">ColorApi</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QObject</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A class that provides an interface for color operations.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">SIG_CCS_MODIFIED</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span> <span class="c1"># clip_id, frame</span>
+    <span class="c1"># Gets emitted whenever any color-corrections associated with a</span>
+    <span class="c1"># particular clip is either removed, added or moved.</span>
+    <span class="c1"># If frame number emitted with signal is None, then it indicates that</span>
+    <span class="c1"># clip level color-corrections list has been modified otherwise it</span>
+    <span class="c1"># indicates frame level color-corrections.</span>
+    <span class="n">SIG_CC_MODIFIED</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="c1"># clip_id, cc_id</span>
+    <span class="c1"># Gets emitted whenever any particular color-correction associated with a</span>
+    <span class="c1"># particular clip is modified. This includes adding/removing</span>
+    <span class="c1"># color-correction nodes, adding/removing regions, chaning</span>
+    <span class="c1"># color-correction&#39;s name, mute/un-mute. The color-correction id could be</span>
+    <span class="c1"># if of a color-correction in the clip-level or frame-level.</span>
+    <span class="n">SIG_CC_NODE_MODIFIED</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="c1"># clip_id, cc_id, node_index</span>
+    <span class="c1"># Gets emitted whenever any particular color-correction node&#39;s attributes</span>
+    <span class="c1"># are modified. Here again color-correction id could be of a</span>
+    <span class="c1"># color-correction in the clip-level or frame-level.</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logger</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize ColorApi with a core API instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span> <span class="o">=</span> <span class="n">DelegateMngr</span><span class="p">(</span><span class="n">logger</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">delegate_mngr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span>
+
+<div class="viewcode-block" id="ColorApi.set_ocio_colorspace">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.set_ocio_colorspace">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_ocio_colorspace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">colorspace</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set OCIO colorspace for given clip.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): Id of the clip</span>
+<span class="sd">            colorspace (str): Name of the colorspace</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_ocio_colorspace</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">colorspace</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.get_ocio_colorspace">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.get_ocio_colorspace">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_ocio_colorspace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get OCIO colorspace for given clip.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): Id of the clip</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str : Name of of OCIO colorspace</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_ocio_colorspace</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.set_ocio_display">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.set_ocio_display">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_ocio_display</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">display</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set current OCIO display.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            display (str): Name of the display</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_ocio_display</span><span class="p">,</span> <span class="p">[</span><span class="n">display</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.get_ocio_display">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.get_ocio_display">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_ocio_display</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the current OCIO display.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str : Name of the display</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_ocio_display</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.set_ocio_view">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.set_ocio_view">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_ocio_view</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set current OCIO view.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            view (str): Name of the view.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_ocio_view</span><span class="p">,</span> <span class="p">[</span><span class="n">view</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.get_ocio_view">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.get_ocio_view">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_ocio_view</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the current OCIO view.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str : Name of the view</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_ocio_view</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.set_channel">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.set_channel">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_channel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">:</span><span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the current color channel(s) to be shown. Following are the</span>
+<span class="sd">        options available and the integer to be used to set them respectively,</span>
+<span class="sd">        RED = 0</span>
+<span class="sd">        GREEN = 1</span>
+<span class="sd">        BLUE = 2</span>
+<span class="sd">        ALPHA = 3</span>
+<span class="sd">        RGB = 4</span>
+<span class="sd">        LUMINANCE = 5</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            channel (int): Number to identify the channel(s) to set</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_channel</span><span class="p">,</span> <span class="p">[</span><span class="n">channel</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.get_channel">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.get_channel">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_channel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the current color channel(s) to be shown. An integer denotining each of the</span>
+<span class="sd">        respective color channel(s) will be returned. Following are the</span>
+<span class="sd">        integers used to denote respective color channel(s).</span>
+<span class="sd">        RED = 0</span>
+<span class="sd">        GREEN = 1</span>
+<span class="sd">        BLUE = 2</span>
+<span class="sd">        ALPHA = 3</span>
+<span class="sd">        RGB = 4</span>
+<span class="sd">        LUMINANCE = 5</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int : Integeter denoting the current color channel.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_channel</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.set_fstop">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.set_fstop">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_fstop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the global fstop color value.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            value (float): fstop value</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_fstop</span><span class="p">,</span> <span class="p">[</span><span class="n">value</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.get_fstop">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.get_fstop">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_fstop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the global fstop color value.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float : the current fstop value set</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_fstop</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.set_gamma">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.set_gamma">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_gamma</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the global gamma color value.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            value (float): gamma value</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_gamma</span><span class="p">,</span> <span class="p">[</span><span class="n">value</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.get_gamma">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.get_gamma">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_gamma</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the global gamma color value.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float : the current gamma value set</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_gamma</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.get_cc_ids">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.get_cc_ids">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_cc_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">frame</span><span class="p">:</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the list of color correction ids for a specific clip or frame.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): Id of the clip whose ccs is needed.</span>
+<span class="sd">            frame(int, optional):</span>
+<span class="sd">                If frame number is given, retrieve the color correction ids in</span>
+<span class="sd">                that particular frame, or return for the entire clip.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list (str) : Ids of color corrections in that particular clip/frame.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_cc_ids</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">frame</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.move_cc">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.move_cc">[docs]</a>
+    <span class="k">def</span> <span class="nf">move_cc</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">from_index</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">to_index</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">frame</span><span class="p">:</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Moves a color correction setting within the list</span>
+<span class="sd">        by changing its position from one index to another.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): id of the clip.</span>
+<span class="sd">            from_index (int) : Current index of the color correction.</span>
+<span class="sd">            to_index (int): Target index to move the color correction.</span>
+<span class="sd">            frame(int, optional): if frame move frame ccs, else move clip ccs.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">move_cc</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">from_index</span><span class="p">,</span> <span class="n">to_index</span><span class="p">,</span> <span class="n">frame</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.append_ccs">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.append_ccs">[docs]</a>
+    <span class="k">def</span> <span class="nf">append_ccs</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">names</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">frame</span><span class="p">:</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">cc_ids</span><span class="p">:</span><span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates color correction objects with the give names and optional ids.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): id of the clip.</span>
+<span class="sd">            names (list): list of names of each color correction.</span>
+<span class="sd">            frame (int, optional):</span>
+<span class="sd">                Specific frame at which to apply the color corrections.</span>
+<span class="sd">                If not provided, the ccs are applied to the entire clip.</span>
+<span class="sd">            cc_ids (list(str), optional): list of color correction unique ids</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            cc_ids (str): list of color correction ids appended.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">append_ccs</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">frame</span><span class="p">,</span> <span class="n">cc_ids</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.delete_ccs">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.delete_ccs">[docs]</a>
+    <span class="k">def</span> <span class="nf">delete_ccs</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cc_ids</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">frame</span><span class="p">:</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete color corrections associated with the particular ids</span>
+<span class="sd">        in the specified clip or frame.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): Id of a clip</span>
+<span class="sd">            cc_ids(list) : List of color corrections to delete.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delete_ccs</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">cc_ids</span><span class="p">,</span> <span class="n">frame</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.get_frame_of_cc">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.get_frame_of_cc">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_frame_of_cc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the frame of the given color correction.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): id of the clip.</span>
+<span class="sd">            cc_id (str): Unique id for the color correction.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int : Frame of the given color-correction</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_frame_of_cc</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.get_nodes">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.get_nodes">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_nodes</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> \
+        <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">ColorTimer</span><span class="p">,</span> <span class="n">Grade</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves all nodes(colortimers and grade nodes) for the specified clip</span>
+<span class="sd">        and color correction id.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): id of the clip.</span>
+<span class="sd">            cc_id (str): Unique id for the color correction.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[Union[ColorTimer, Grade]] :</span>
+<span class="sd">                List of nodes in that particular cc id.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_nodes</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.get_node_count">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.get_node_count">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_node_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">:</span><span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the current number of nodes in the color-correction of the</span>
+<span class="sd">        given id in the clip of the given id.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): id of the clip.</span>
+<span class="sd">            cc_id (str): Unique id for the color correction.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int : Number of ndodes in the given color-correction</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_node_count</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.get_node">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.get_node">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_node</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">node_index</span><span class="p">:</span><span class="nb">int</span><span class="p">)</span> \
+        <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">ColorTimer</span><span class="p">,</span> <span class="n">Grade</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve the node(colortimer or grade node) for the specified clip</span>
+<span class="sd">        and color correction id and from the particular index.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): id of the clip.</span>
+<span class="sd">            cc_id (str): Unique id for the color correction.</span>
+<span class="sd">            node_index (int): index of the node to retrieve.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            object : Colortimer or grade node object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_node</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">,</span> <span class="n">node_index</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.append_nodes">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.append_nodes">[docs]</a>
+    <span class="k">def</span> <span class="nf">append_nodes</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">nodes</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">ColorTimer</span><span class="p">,</span> <span class="n">Grade</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Appends multiple nodes(either a colortimer or grade node object) to the</span>
+<span class="sd">        CC created for the specified clip and cc id.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): Id of the clip.</span>
+<span class="sd">            cc_id (str):</span>
+<span class="sd">                Id of color correction to which the node(s) are to be added.</span>
+<span class="sd">            nodes (List[Union[ColorTimer, Grade]]):</span>
+<span class="sd">                List of ColorTimer or Grade nodes to append.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">append_nodes</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">,</span> <span class="n">nodes</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.clear_nodes">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.clear_nodes">[docs]</a>
+    <span class="k">def</span> <span class="nf">clear_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Deletes all the nodes(Colortimer, Grade) in the color correction</span>
+<span class="sd">        for the give clip and color correction ID.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): Id of a clip</span>
+<span class="sd">            cc_id(str) : Id of Color-Correction</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clear_nodes</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.delete_node">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.delete_node">[docs]</a>
+    <span class="k">def</span> <span class="nf">delete_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">node_index</span><span class="p">:</span><span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete the specific node in the given index in the color correction</span>
+<span class="sd">        settings for the give clip and color correction ID.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): Id of a clip</span>
+<span class="sd">            cc_id(str) : Id of Color-Correction</span>
+<span class="sd">            node_index (int): Index of node to delete</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">delete_node</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">,</span> <span class="n">node_index</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.set_node_properties">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.set_node_properties">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_node_properties</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">node_index</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">properties</span><span class="p">:</span><span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the given node-properties of the node in the color</span>
+<span class="sd">        correction for the give clip, color-correction and node-index.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): Id of the clip.</span>
+<span class="sd">            cc_id (str): Unique id for the color correction.</span>
+<span class="sd">            node_index (int) : Index of the node to update</span>
+<span class="sd">            properties (dict):</span>
+<span class="sd">                Key value pairs of the properties that need to be set.</span>
+<span class="sd">                Example : {&#39;offset&#39; : [0.5, 0.3, 0.4], &#39;mute&#39;:True}</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_node_properties</span><span class="p">,</span>
+            <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">,</span> <span class="n">node_index</span><span class="p">,</span> <span class="n">properties</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.get_node_properties">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.get_node_properties">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_node_properties</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">node_index</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">property_names</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        For the provided node property name(s), gets the values of the</span>
+<span class="sd">        node in the color correction for the give clip, color-correction</span>
+<span class="sd">        and node-index.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): Id of the clip.</span>
+<span class="sd">            cc_id (str): Unique id for the color correction.</span>
+<span class="sd">            node_index (int) : Index of the node to update</span>
+<span class="sd">            property_names (list):</span>
+<span class="sd">                Name of the properties whose values need to be fetched.</span>
+<span class="sd">                Example : [&quot;offset&quot;, &quot;gain&quot;]</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List :</span>
+<span class="sd">                Values of the given property names in the same order as</span>
+<span class="sd">                how the property names were given.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_node_properties</span><span class="p">,</span>
+            <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">,</span> <span class="n">node_index</span><span class="p">,</span> <span class="n">property_names</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.is_modified">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.is_modified">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_modified</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks if color correction values of that particular id in the</span>
+<span class="sd">        specified clip has been modified.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): id of the clip.</span>
+<span class="sd">            cc_id (str): Unique id for the color correction.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool : True if modified, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">is_modified</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.set_name">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.set_name">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update the name of the color correction setting.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): id of the clip.</span>
+<span class="sd">            cc_id (str): Unique id for the color correction.</span>
+<span class="sd">            name (str): name to update to.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_name</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">,</span> <span class="n">name</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.get_name">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.get_name">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves the name of the color correction in the</span>
+<span class="sd">        specified clip and cc id.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): id of the clip.</span>
+<span class="sd">            cc_id (str): Unique id for the color correction.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: name of the color correction.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_name</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.create_region">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.create_region">[docs]</a>
+    <span class="k">def</span> <span class="nf">create_region</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a mask/region to the specified clip and color correction.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): id of the clip.</span>
+<span class="sd">            cc_id (str): Unique id for the color correction.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">create_region</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.has_region">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.has_region">[docs]</a>
+    <span class="k">def</span> <span class="nf">has_region</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a particular region exists within the specified clip</span>
+<span class="sd">        and color correction(id).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): id of the clip.</span>
+<span class="sd">            cc_id (str): Unique id for the color correction.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if region exists, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">has_region</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.append_shape_to_region">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.append_shape_to_region">[docs]</a>
+    <span class="k">def</span> <span class="nf">append_shape_to_region</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">points</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Appends a shape to the region in the specified clip</span>
+<span class="sd">        and color correction ID.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): id of the clip.</span>
+<span class="sd">            cc_id (str): Unique id for the color correction.</span>
+<span class="sd">            points (list) : list of (x, y) points representing any shape.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">append_shape_to_region</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">,</span> <span class="n">points</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.delete_region">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.delete_region">[docs]</a>
+    <span class="k">def</span> <span class="nf">delete_region</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a mask/region in the specified clip and color correction.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): Id of the clip.</span>
+<span class="sd">            cc_id (str): Unique id for the color correction.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delete_region</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.set_region_falloff">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.set_region_falloff">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_region_falloff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">falloff</span><span class="p">:</span><span class="nb">float</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the falloff value associated with the region in a</span>
+<span class="sd">        particular clip and color correction.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): id of the clip.</span>
+<span class="sd">            cc_id (str): Unique id for the color correction.</span>
+<span class="sd">            falloff (float): falloff value</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_region_falloff</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">,</span> <span class="n">falloff</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.get_region_falloff">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.get_region_falloff">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_region_falloff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves the falloff value associated with the region in a</span>
+<span class="sd">        particular clip and color correction.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): id of the clip.</span>
+<span class="sd">            cc_id (str): Unique id for the color correction.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float : falloff value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_region_falloff</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.mute">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.mute">[docs]</a>
+    <span class="k">def</span> <span class="nf">mute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span><span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets mute value all color correction values in the specified</span>
+<span class="sd">        clip associated with the specified color correction ID.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): id of the clip.</span>
+<span class="sd">            cc_id (str): Unique id for the color correction.</span>
+<span class="sd">            value (bool): True to mute the color correction, False otherwise.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mute</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">,</span> <span class="n">value</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.is_mute">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.is_mute">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_mute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks if color correction values of that particular id in the</span>
+<span class="sd">        specified clip has been muted.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): id of the clip.</span>
+<span class="sd">            cc_id (str): Unique id for the color correction.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool : True if muted, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">is_mute</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.mute_all">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.mute_all">[docs]</a>
+    <span class="k">def</span> <span class="nf">mute_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span><span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets mute value all color correction values in the specified</span>
+<span class="sd">        clip associated with the specified color correction ID.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): id of the clip.</span>
+<span class="sd">            value (bool): True to mute all the color corrections,</span>
+<span class="sd">                          False otherwise.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mute_all</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">value</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.is_mute_all">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.is_mute_all">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_mute_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks if all color correction values in the specified</span>
+<span class="sd">        clip has been muted.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): id of the clip.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool : True if muted, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">is_mute_all</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.set_read_only">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.set_read_only">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_read_only</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span><span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set if the color correction values of that particular id should be</span>
+<span class="sd">        read-only or read-write.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): id of the clip.</span>
+<span class="sd">            cc_id (str): Unique id for the color correction.</span>
+<span class="sd">            value (bool) : True if success False otherwise</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool : True if set, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_read_only</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">,</span> <span class="n">value</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.is_read_only">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.is_read_only">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_read_only</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks if color correction values of that particular id in</span>
+<span class="sd">        the specified clip is read_only.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): id of the clip.</span>
+<span class="sd">            cc_id (str): Unique id for the color correction.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool : True if read only, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">is_read_only</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">cc_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.get_rw_frames">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.get_rw_frames">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_rw_frames</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves the frames that contain read-write color corrections within</span>
+<span class="sd">        a specified clip.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): id of the clip.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[int]: list of frame numbers</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_rw_frames</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.get_ro_frames">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.get_ro_frames">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_ro_frames</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves the frames that contain read-only color corrections within</span>
+<span class="sd">        a specified clip.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): id of the clip.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[int]: list of frame numbers</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_ro_frames</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.set_ro_ccs">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.set_ro_ccs">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_ro_ccs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ccs</span><span class="p">:</span><span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Removes all existing read only color corrections in the given clips and</span>
+<span class="sd">        replaces them with the given ccs. If Frame number is None, then the</span>
+<span class="sd">        color-correction will be added as a clip-level color-correction.</span>
+
+<span class="sd">        Here is an example of how the ccs dict should look like,</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            {</span>
+<span class="sd">                clip_id_1 : [</span>
+<span class="sd">                    (None, color_correction),</span>
+<span class="sd">                    (frame_1, color_correction),</span>
+<span class="sd">                    (None, color_correction),</span>
+<span class="sd">                    (frame_5, color_correction),</span>
+<span class="sd">                    (frame_10, color_correction)</span>
+<span class="sd">                ]</span>
+<span class="sd">            }</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ccs (dict):</span>
+<span class="sd">                Color correction that need to be set for the given clips and</span>
+<span class="sd">                their respective frames.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool : True if sucess, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_ro_ccs</span><span class="p">,</span> <span class="p">[</span><span class="n">ccs</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.get_ro_ccs">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.get_ro_ccs">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_ro_ccs</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">frame</span><span class="p">:</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">List</span><span class="p">[</span><span class="n">ColorCorrection</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the list of read-only color-corrctions that are present in the</span>
+<span class="sd">        given clips on the given frames. If frame number is not given, then\</span>
+<span class="sd">        then the clip-level color-corrections are returned.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id(str): Id of the clip</span>
+<span class="sd">            frame(Optional[int]):</span>
+<span class="sd">                Frame of the clip. If None is give, clip level</span>
+<span class="sd">                cc will be returned.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[RPA ColorCorrection]: RPA Color Correction Object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_ro_ccs</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">frame</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.set_rw_ccs">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.set_rw_ccs">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_rw_ccs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ccs</span><span class="p">:</span><span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Removes all existing read write color corrections in the given clips</span>
+<span class="sd">        and replaces them with the given ccs. If Frame number is None, then</span>
+<span class="sd">        the color-correction will be added as a clip-level color-correction.</span>
+
+<span class="sd">        Here is an example of how the ccs dict should look like,</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            {</span>
+<span class="sd">                clip_id_1 : [</span>
+<span class="sd">                    (None, color_correction),</span>
+<span class="sd">                    (frame_1, color_correction),</span>
+<span class="sd">                    (None, color_correction),</span>
+<span class="sd">                    (frame_5, color_correction),</span>
+<span class="sd">                    (frame_10, color_correction)</span>
+<span class="sd">                ]</span>
+<span class="sd">            }</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ccs (dict):</span>
+<span class="sd">                Color correction that need to be set for the given clips and</span>
+<span class="sd">                their respective frames.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool : True if sucess, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_rw_ccs</span><span class="p">,</span> <span class="p">[</span><span class="n">ccs</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.get_rw_ccs">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.get_rw_ccs">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_rw_ccs</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">frame</span><span class="p">:</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">List</span><span class="p">[</span><span class="n">ColorCorrection</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the list of read-only color-corrctions that are present in the</span>
+<span class="sd">        given clips on the given frames. If frame number is not given, then\</span>
+<span class="sd">        then the clip-level color-corrections are returned.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id(str): Id of the clip</span>
+<span class="sd">            frame(Optional[int]):</span>
+<span class="sd">                Frame of the clip. If None is give, clip level</span>
+<span class="sd">                cc will be returned.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[RPA ColorCorrection]: RPA Color Correction Object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_rw_ccs</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">frame</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ColorApi.delete_ro_ccs">
+<a class="viewcode-back" href="../../../rpa_api_modules/color_api.html#rpa.api.color_api.ColorApi.delete_ro_ccs">[docs]</a>
+    <span class="k">def</span> <span class="nf">delete_ro_ccs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clips</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Deletes all existing read only color corrections in the given clips.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clips (list): List of clip ids to delete ro_ccs from.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool : True if sucess, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delete_ro_ccs</span><span class="p">,</span> <span class="p">[</span><span class="n">clips</span><span class="p">])</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Review Plugin API (RPA)</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rpa_api_modules/index.html">RPA API Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rpa_widgets.html">RPA Widgets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../open_rv_implementation.html">Open RV Implmentation</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Sony Pictures Imageworks (SPI).
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

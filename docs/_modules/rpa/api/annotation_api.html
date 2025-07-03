@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>rpa.api.annotation_api &#8212; Review Plugin API (RPA) 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for rpa.api.annotation_api</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Annotation API</span>
+<span class="sd">==============</span>
+
+<span class="sd">Manage clip annotations which include Strokes and Texts.</span>
+
+<span class="sd">Annotations can only be set on the particular Frame of a Clip.</span>
+
+<span class="sd">Annotations can either be read-write or read-only.</span>
+
+<span class="sd">A Frame of a clip can have multiple Read-Write Annotations and it can</span>
+<span class="sd">have only 1 Read-Only Annotation.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">PySide2</span> <span class="kn">import</span> <span class="n">QtCore</span>
+<span class="kn">from</span> <span class="nn">rpa.delegate_mngr</span> <span class="kn">import</span> <span class="n">DelegateMngr</span>
+<span class="kn">from</span> <span class="nn">rpa.session_state.annotations</span> <span class="kn">import</span> \
+    <span class="n">StrokePoint</span><span class="p">,</span> <span class="n">Stroke</span><span class="p">,</span> <span class="n">Text</span><span class="p">,</span> <span class="n">Annotation</span>
+<span class="kn">from</span> <span class="nn">rpa.session_state.utils</span> <span class="kn">import</span> <span class="n">Color</span><span class="p">,</span> <span class="n">Point</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span>
+
+
+<div class="viewcode-block" id="AnnotationApi">
+<a class="viewcode-back" href="../../../rpa_api_modules/annotation_api.html#rpa.api.annotation_api.AnnotationApi">[docs]</a>
+<span class="k">class</span> <span class="nc">AnnotationApi</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QObject</span><span class="p">):</span>
+    <span class="n">SIG_MODIFIED</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Signal</span><span class="p">()</span>
+    <span class="c1"># Gets emitted whenever annotations(strokes/texts) are added or removed.</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logger</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span> <span class="o">=</span> <span class="n">DelegateMngr</span><span class="p">(</span><span class="n">logger</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">delegate_mngr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span> <span class="n">DelegateMngr</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span>
+
+<div class="viewcode-block" id="AnnotationApi.append_transient_point">
+<a class="viewcode-back" href="../../../rpa_api_modules/annotation_api.html#rpa.api.annotation_api.AnnotationApi.append_transient_point">[docs]</a>
+    <span class="k">def</span> <span class="nf">append_transient_point</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">frame</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">token</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">stroke_point</span><span class="p">:</span><span class="n">StrokePoint</span><span class="p">,</span> <span class="n">is_line</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This methods adds a transient point(temporary point for drawing)</span>
+<span class="sd">        to a specified frame in a clip. These points are used to build or</span>
+<span class="sd">        update a stroke during the drawing process. If the token already</span>
+<span class="sd">        exists, the point is appended to the stroke</span>
+<span class="sd">        associated with that token.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str):</span>
+<span class="sd">                Id of a clip where the transient point will be added.</span>
+<span class="sd">            frame (int): frame number where the point should be added.</span>
+<span class="sd">            token (str):</span>
+<span class="sd">                A unique identifier that associates the transient point</span>
+<span class="sd">                with a specified drawing stroke.</span>
+<span class="sd">            stroke_point (StrokePoint):</span>
+<span class="sd">                RPA StrokePoint that needs to be appended to the transient</span>
+<span class="sd">                stroke that is created by means of appending transient points.</span>
+<span class="sd">            is_line (bool):</span>
+<span class="sd">                If the is_line flag is True, the trasient stroke is a line,</span>
+<span class="sd">                only 2 points at most will be kept.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">append_transient_point</span><span class="p">,</span>
+            <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">frame</span><span class="p">,</span> <span class="n">token</span><span class="p">,</span> <span class="n">stroke_point</span><span class="p">,</span> <span class="n">is_line</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="AnnotationApi.get_transient_stroke">
+<a class="viewcode-back" href="../../../rpa_api_modules/annotation_api.html#rpa.api.annotation_api.AnnotationApi.get_transient_stroke">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_transient_stroke</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">frame</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">token</span><span class="p">:</span><span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves all transient points associated with a specific stroke in</span>
+<span class="sd">        a given clip and frame.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): Id of a clip where the transient stroke exists.</span>
+<span class="sd">            frame (int): Frame number where the stroke is located.</span>
+<span class="sd">            token (str):</span>
+<span class="sd">                A unique identifier associated with the stroke</span>
+<span class="sd">                that needs to be retrieved.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Stroke :</span>
+<span class="sd">                The RPA Stroke that is created by means of appending</span>
+<span class="sd">                transient stroke-points.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_transient_stroke</span><span class="p">,</span>
+            <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">frame</span><span class="p">,</span> <span class="n">token</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="AnnotationApi.delete_transient_points">
+<a class="viewcode-back" href="../../../rpa_api_modules/annotation_api.html#rpa.api.annotation_api.AnnotationApi.delete_transient_points">[docs]</a>
+    <span class="k">def</span> <span class="nf">delete_transient_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">frame</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">token</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Removes all transient points associated with a specific RPA Stroke in</span>
+<span class="sd">        a given clip and frame.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str):</span>
+<span class="sd">                Id of a clip where the transient points should be deleted.</span>
+<span class="sd">            frame (int): Frame number where the points should be deleted.</span>
+<span class="sd">            token (str):</span>
+<span class="sd">                The unique identifier associated with the stroke</span>
+<span class="sd">                whose points are to be deleted.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delete_transient_points</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">frame</span><span class="p">,</span> <span class="n">token</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="AnnotationApi.append_strokes">
+<a class="viewcode-back" href="../../../rpa_api_modules/annotation_api.html#rpa.api.annotation_api.AnnotationApi.append_strokes">[docs]</a>
+    <span class="k">def</span> <span class="nf">append_strokes</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">frame</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">strokes</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="n">Stroke</span><span class="p">])</span><span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method adds new strokes to a specified clip and frame.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): Id of a clip.</span>
+<span class="sd">            frame (int): Frame number.</span>
+<span class="sd">            strokes (list[Stroke]) :</span>
+<span class="sd">                List of RPA Stroke objects to add to the frame.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">append_strokes</span><span class="p">,</span>
+            <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">frame</span><span class="p">,</span> <span class="n">strokes</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="AnnotationApi.set_text">
+<a class="viewcode-back" href="../../../rpa_api_modules/annotation_api.html#rpa.api.annotation_api.AnnotationApi.set_text">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_text</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">frame</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span><span class="n">Text</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Based on the text properties defined in the text object</span>
+<span class="sd">        set the text as an annotation.</span>
+
+<span class="sd">        If a text-annotation already exists at the same position as the</span>
+<span class="sd">        position in given text object, then that existing text annotation&#39;s</span>
+<span class="sd">        text and properties will be updated with the text and properties of</span>
+<span class="sd">        the the given text-object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): Id of a clip.</span>
+<span class="sd">            frame (int): Frame number.</span>
+<span class="sd">            text (Text) : RPA Text object</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool): True if success else False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_text</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">frame</span><span class="p">,</span> <span class="n">text</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="AnnotationApi.append_texts">
+<a class="viewcode-back" href="../../../rpa_api_modules/annotation_api.html#rpa.api.annotation_api.AnnotationApi.append_texts">[docs]</a>
+    <span class="k">def</span> <span class="nf">append_texts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">frame</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">texts</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="n">Text</span><span class="p">])</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method adds new text annotations to the specified clip and frame.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): Id of a clip.</span>
+<span class="sd">            frame (int): Frame number.</span>
+<span class="sd">            texts (list[Text]) : List of RPA Text objects to add to the frame.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">append_texts</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">frame</span><span class="p">,</span> <span class="n">texts</span><span class="p">])</span></div>
+
+
+
+<div class="viewcode-block" id="AnnotationApi.set_ro_annotations">
+<a class="viewcode-back" href="../../../rpa_api_modules/annotation_api.html#rpa.api.annotation_api.AnnotationApi.set_ro_annotations">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_ro_annotations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">annotations</span><span class="p">:</span><span class="n">Dict</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the list of read-only annotaitons that need to be set for the</span>
+<span class="sd">        clips and their respective frames as mentioned in the given dict.</span>
+
+<span class="sd">        Following is an example of how the annotations dict should look like,</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            annotations = {</span>
+<span class="sd">                &quot;clip_id_1&quot;: {</span>
+<span class="sd">                    frame_1: [Annotation(), Annotation(), Annotation()]</span>
+<span class="sd">                    frame_2: [Annotation(), Annotation(), Annotation()]</span>
+<span class="sd">                    frame_3: [Annotation(), Annotation()]</span>
+<span class="sd">                },</span>
+<span class="sd">                &quot;clip_id_2&quot;: {</span>
+<span class="sd">                    frame_1: [Annotation(), Annotation(), Annotation()]</span>
+<span class="sd">                    frame_2: [Annotation(), Annotation(), Annotation()]</span>
+<span class="sd">                    frame_3: [Annotation(), Annotation()]</span>
+<span class="sd">                }</span>
+<span class="sd">            }</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            annotations (Dict): Dictionary of annotations</span>
+
+<span class="sd">        Returns: (bool) : True if success False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_ro_annotations</span><span class="p">,</span> <span class="p">[</span><span class="n">annotations</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="AnnotationApi.get_ro_annotations">
+<a class="viewcode-back" href="../../../rpa_api_modules/annotation_api.html#rpa.api.annotation_api.AnnotationApi.get_ro_annotations">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_ro_annotations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">frame</span><span class="p">:</span><span class="nb">int</span><span class="p">)</span><span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Annotation</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves the list of read-only annotations for the</span>
+<span class="sd">        specified clip and frame.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): Id of a clip.</span>
+<span class="sd">            frame (int): Clip frame number</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (list) : Read-only Annotations(strokes and texts) objects.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_ro_annotations</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">frame</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="AnnotationApi.delete_ro_annotations">
+<a class="viewcode-back" href="../../../rpa_api_modules/annotation_api.html#rpa.api.annotation_api.AnnotationApi.delete_ro_annotations">[docs]</a>
+    <span class="k">def</span> <span class="nf">delete_ro_annotations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clips</span><span class="p">:</span><span class="nb">list</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method deletes the read-only annotations from given clips.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clips (list):list of clip ids.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delete_ro_annotations</span><span class="p">,</span> <span class="p">[</span><span class="n">clips</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="AnnotationApi.get_ro_frames">
+<a class="viewcode-back" href="../../../rpa_api_modules/annotation_api.html#rpa.api.annotation_api.AnnotationApi.get_ro_frames">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_ro_frames</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves the frames that contain read-only annotations within</span>
+<span class="sd">        a specified clip. These are frames where annotations cannot be modified</span>
+<span class="sd">        or erased and are used for viewing only.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): Id of a clip.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[int] :</span>
+<span class="sd">                A list of frame numbers that contain read-only annotations.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_ro_frames</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="AnnotationApi.set_rw_annotations">
+<a class="viewcode-back" href="../../../rpa_api_modules/annotation_api.html#rpa.api.annotation_api.AnnotationApi.set_rw_annotations">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_rw_annotations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">annotations</span><span class="p">:</span><span class="n">Dict</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the read-write annotations for the clips and their respective frames as</span>
+<span class="sd">        given in the dictionary.</span>
+
+<span class="sd">        Here is an example of how the annotations dict should look like,</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            {</span>
+<span class="sd">                &quot;clip_id_1&quot;: {</span>
+<span class="sd">                    frame_1: Annotation()</span>
+<span class="sd">                    frame_2: Annotation()</span>
+<span class="sd">                    frame_3: Annotation()</span>
+<span class="sd">                },</span>
+<span class="sd">                &quot;clip_id_2&quot;: {</span>
+<span class="sd">                    frame_1: Annotation()</span>
+<span class="sd">                    frame_2: Annotation()</span>
+<span class="sd">                    frame_3: Annotation()</span>
+<span class="sd">                }</span>
+<span class="sd">            }</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            annotatoins(Dict) : Annotaions that need to be set on clips and</span>
+<span class="sd">            their respective frames.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool): True is success else False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_rw_annotations</span><span class="p">,</span> <span class="p">[</span><span class="n">annotations</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="AnnotationApi.get_rw_annotation">
+<a class="viewcode-back" href="../../../rpa_api_modules/annotation_api.html#rpa.api.annotation_api.AnnotationApi.get_rw_annotation">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_rw_annotation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">frame</span><span class="p">:</span><span class="nb">int</span><span class="p">)</span><span class="o">-&gt;</span> <span class="n">Annotation</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves the read-write annotations for a specified clip and frame.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): Id of a clip.</span>
+<span class="sd">            frame (int): frame number.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Annotation(RPA Annotation):</span>
+<span class="sd">                RPA Annotation(strokes and texts) object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_rw_annotation</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">frame</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="AnnotationApi.delete_rw_annotation">
+<a class="viewcode-back" href="../../../rpa_api_modules/annotation_api.html#rpa.api.annotation_api.AnnotationApi.delete_rw_annotation">[docs]</a>
+    <span class="k">def</span> <span class="nf">delete_rw_annotation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">frame</span><span class="p">:</span><span class="nb">int</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method deletes the read-write annotation from a specified clip and frame.</span>
+<span class="sd">        Unlike clear, delete doesn&#39;t bring back the annotation on undo.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): Id of a clip.</span>
+<span class="sd">            frame (int): Frame number.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delete_rw_annotation</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">frame</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="AnnotationApi.get_rw_frames">
+<a class="viewcode-back" href="../../../rpa_api_modules/annotation_api.html#rpa.api.annotation_api.AnnotationApi.get_rw_frames">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_rw_frames</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves the frames that contain read-write annotations within</span>
+<span class="sd">        a specified clip. There are frames where annotations can be modified</span>
+<span class="sd">        or erased.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): Id of a clip.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list : A list of frame numbers that contain read-write annotations.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_rw_frames</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="AnnotationApi.clear_frame">
+<a class="viewcode-back" href="../../../rpa_api_modules/annotation_api.html#rpa.api.annotation_api.AnnotationApi.clear_frame">[docs]</a>
+    <span class="k">def</span> <span class="nf">clear_frame</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">frame</span><span class="p">:</span><span class="nb">int</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method clears all annotations in a specified clip and frame.</span>
+<span class="sd">        This differs from delete, when you do undo/redo, this still brings</span>
+<span class="sd">        back the cleared annotations, but delete will not.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): Id of a clip.</span>
+<span class="sd">            frame (int): Frame number where annotations should be cleared.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clear_frame</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">frame</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="AnnotationApi.undo">
+<a class="viewcode-back" href="../../../rpa_api_modules/annotation_api.html#rpa.api.annotation_api.AnnotationApi.undo">[docs]</a>
+    <span class="k">def</span> <span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">frame</span><span class="p">:</span><span class="nb">int</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reverts the most recent annotation change in the specified</span>
+<span class="sd">        clip and frame.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): Id of a clip.</span>
+<span class="sd">            frame (int): Frame number.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">undo</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">frame</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="AnnotationApi.redo">
+<a class="viewcode-back" href="../../../rpa_api_modules/annotation_api.html#rpa.api.annotation_api.AnnotationApi.redo">[docs]</a>
+    <span class="k">def</span> <span class="nf">redo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">frame</span><span class="p">:</span><span class="nb">int</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method reapplies the most recent undone annotation change</span>
+<span class="sd">        in the specified clip and frame.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): Id of a clip.</span>
+<span class="sd">            frame (int): Frame number.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">redo</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">frame</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="AnnotationApi.set_laser_pointer">
+<a class="viewcode-back" href="../../../rpa_api_modules/annotation_api.html#rpa.api.annotation_api.AnnotationApi.set_laser_pointer">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_laser_pointer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">point</span><span class="p">:</span><span class="n">Point</span><span class="p">,</span> <span class="n">color</span><span class="p">:</span><span class="n">Color</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method sets a laser pointer on the specified clip and frame.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            id (str): Id of the laser pointer.</span>
+<span class="sd">            point (Point):</span>
+<span class="sd">                RPA Point object holding the normalized (0.0 to 1.0) position</span>
+<span class="sd">                where the laser pointer should be placed.</span>
+<span class="sd">            color (Color):</span>
+<span class="sd">                The RPA Color objectfor the laset pointer.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_laser_pointer</span><span class="p">,</span> <span class="p">[</span><span class="nb">id</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">color</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="AnnotationApi.set_pointer">
+<a class="viewcode-back" href="../../../rpa_api_modules/annotation_api.html#rpa.api.annotation_api.AnnotationApi.set_pointer">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_pointer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stroke_point</span><span class="p">:</span><span class="n">StrokePoint</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method sets a pen pointer on the specified clip and frame.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            stroke_point (StrokePoint) :</span>
+<span class="sd">                The RPA StrokePoint that needs to be used to draw the pointer.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_pointer</span><span class="p">,</span> <span class="p">[</span><span class="n">stroke_point</span><span class="p">])</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Review Plugin API (RPA)</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rpa_api_modules/index.html">RPA API Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rpa_widgets.html">RPA Widgets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../open_rv_implementation.html">Open RV Implmentation</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Sony Pictures Imageworks (SPI).
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

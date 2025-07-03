@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>rpa.api.session_api &#8212; Review Plugin API (RPA) 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for rpa.api.session_api</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Session API</span>
+<span class="sd">===========</span>
+
+<span class="sd">Manage Playlists, Clips and Clip-Attributes.</span>
+
+<span class="sd">The Session API works with Ids to manipulate respective Playlists, Clips and</span>
+<span class="sd">Attrs.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">PySide2</span> <span class="kn">import</span> <span class="n">QtCore</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Any</span>
+<span class="kn">from</span> <span class="nn">rpa.delegate_mngr</span> <span class="kn">import</span> <span class="n">DelegateMngr</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+
+
+<div class="viewcode-block" id="SessionApi">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi">[docs]</a>
+<span class="k">class</span> <span class="nc">SessionApi</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QObject</span><span class="p">):</span>
+    <span class="n">SIG_PLAYLISTS_MODIFIED</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Signal</span><span class="p">()</span>
+    <span class="c1"># Gets emitted whenever the playlist list in the session is modified.</span>
+    <span class="c1"># This could happend when existing playlists are deleted, permanently</span>
+    <span class="c1"># deleted, new playlist is created and when any of the existing playlists</span>
+    <span class="c1"># are moved.</span>
+    <span class="n">SIG_PLAYLIST_MODIFIED</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span> <span class="c1"># playlist_id</span>
+    <span class="c1"># Gets emitted whenever the clips under a respective playlist is modified.</span>
+    <span class="c1"># This could happend when existing clips are permantly deleted or when new</span>
+    <span class="c1"># clips are created and when existing clips are moved.</span>
+    <span class="n">SIG_FG_PLAYLIST_CHANGED</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span> <span class="c1"># playlist_id</span>
+    <span class="c1"># Gets emitted when the Fore-Ground playlist, which is always the current</span>
+    <span class="c1"># playlist is changed. This could happen, when the user changes it, or</span>
+    <span class="c1"># even when the existing FG playlist is deleted and a new FG playlist is</span>
+    <span class="c1"># automatically assigned.</span>
+    <span class="n">SIG_BG_PLAYLIST_CHANGED</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span> <span class="c1"># playlist_id/None</span>
+    <span class="c1"># Gets emitted when the BG playlist is changed. This could happen when the</span>
+    <span class="c1"># user changes the BG playlist, when the BG playlist is removed or</span>
+    <span class="c1"># deleted.</span>
+    <span class="n">SIG_CURRENT_CLIP_CHANGED</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span> <span class="c1"># clip_id/None</span>
+    <span class="c1"># Gets emitted when the current clip that is shown in the viewport</span>
+    <span class="c1"># changes. This could happen when the user changes the current clip or the</span>
+    <span class="c1"># current clip is deleted and a new current clip is automatically assigned.</span>
+    <span class="n">SIG_ATTR_VALUES_CHANGED</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+    <span class="c1"># Gets emitted whenever one or more attr values of a clip are changed.</span>
+    <span class="c1"># Example of how the attr values will be carried by this signal,</span>
+    <span class="c1"># [(playlist_id, clip_id, attr_id, value),</span>
+    <span class="c1">#  (playlist_id, clip_id, attr_id, value)]</span>
+    <span class="n">SIG_ACTIVE_CLIPS_CHANGED</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Signal</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span> <span class="c1"># playlist_id</span>
+    <span class="c1"># Gets emitted whenever the list of active clips are changed</span>
+    <span class="c1"># for a particular playlist.</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logger</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span> <span class="o">=</span> <span class="n">DelegateMngr</span><span class="p">(</span><span class="n">logger</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">delegate_mngr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span>
+
+<div class="viewcode-block" id="SessionApi.clear">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.clear">[docs]</a>
+    <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Clear the session by permanently deleting all the Playlists and their</span>
+<span class="sd">        corresponding clips in the entire Session tree.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clear</span><span class="p">)</span></div>
+
+
+    <span class="c1">###########################################################################</span>
+    <span class="c1"># Playlist Methods                                                        #</span>
+    <span class="c1">###########################################################################</span>
+
+<div class="viewcode-block" id="SessionApi.get_playlists">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_playlists">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_playlists</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns ids of all playlist in the session.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[str]: Ids of playlists.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_playlists</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_playlist_name">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_playlist_name">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_playlist_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns name of the playlist whose id is provided.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            id (str): Id of Playlist</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str : Name of Playlist</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_playlist_name</span><span class="p">,</span> <span class="p">[</span><span class="nb">id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.set_fg_playlist">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.set_fg_playlist">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_fg_playlist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the playlist with the given id to be the Fore-Ground(FG) playlist.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            id (str): Id of playlist</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_fg_playlist</span><span class="p">,</span> <span class="p">[</span><span class="nb">id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_fg_playlist">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_fg_playlist">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_fg_playlist</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the id of the Fore-Ground(FG) playlist. Note that a Session</span>
+<span class="sd">        will always have a FG playlist.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str : Id of the playlist to set as Fore-Ground.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_fg_playlist</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.set_bg_playlist">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.set_bg_playlist">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_bg_playlist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the playlist with given id to be the Back-Ground(BG) playlist.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            id (str): Id of Playlist to set as Back-Ground.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_bg_playlist</span><span class="p">,</span> <span class="p">[</span><span class="nb">id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_bg_playlist">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_bg_playlist">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_bg_playlist</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the id of the Back-Ground(BG) playlist. If there is no BG</span>
+<span class="sd">        playlist currently, then None is returned.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Optional[str] : Optional id of Back-Ground playlist.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_bg_playlist</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.delete_playlists_permanently">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.delete_playlists_permanently">[docs]</a>
+    <span class="k">def</span> <span class="nf">delete_playlists_permanently</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ids</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Playlists with the given respective ids, will be permanently deleted</span>
+<span class="sd">        along with the clips they hold. Permanently deleted playlists cannot</span>
+<span class="sd">        be restored.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            Ids (List[str]): Ids of Playlists.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">delete_playlists_permanently</span><span class="p">,</span> <span class="p">[</span><span class="n">ids</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.delete_playlists">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.delete_playlists">[docs]</a>
+    <span class="k">def</span> <span class="nf">delete_playlists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ids</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Playlists with the given respective ids will be temporarily deleted</span>
+<span class="sd">        along with the clips they hold. Note that this method will only</span>
+<span class="sd">        temporarily delete the playlists, these temporarily deleted playlists</span>
+<span class="sd">        can be restored.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            Ids (List[str]): Ids of Playlists.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delete_playlists</span><span class="p">,</span> <span class="p">[</span><span class="n">ids</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_deleted_playlists">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_deleted_playlists">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_deleted_playlists</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns ids of all the playlists that have been deleted temporarily.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[str]: Ids of all temporarily deleted playlists.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_deleted_playlists</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.restore_playlists">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.restore_playlists">[docs]</a>
+    <span class="k">def</span> <span class="nf">restore_playlists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ids</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Restores playlists with the given ids that were previouly deleted</span>
+<span class="sd">        back into the session. If index is provided the playlists</span>
+<span class="sd">        will be restored into it otherwise will restore playlists to the end</span>
+<span class="sd">        of the playlist.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ids (List[str]): Ids of playlists to restore from being deleted.</span>
+
+<span class="sd">        Kwargs:</span>
+<span class="sd">            index (Optional[str]):</span>
+<span class="sd">                Optioanl position index where the playlists need to be restored to.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool) : True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">restore_playlists</span><span class="p">,</span> <span class="p">[</span><span class="n">ids</span><span class="p">,</span> <span class="n">index</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.create_playlists">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.create_playlists">[docs]</a>
+    <span class="k">def</span> <span class="nf">create_playlists</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">names</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">index</span><span class="p">:</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">ids</span><span class="p">:</span><span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates new playlists with the given names. If index is provided, the</span>
+<span class="sd">        new playlists will be inserted into it, otherwise they will be</span>
+<span class="sd">        inserted at the end. If unique ids are provided, they will used to</span>
+<span class="sd">        identify each of the created playlists otherwise unique ids will be</span>
+<span class="sd">        auto-generated and returned once the playlists are created.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            names (List[str]): Names for the playlists to be created</span>
+
+<span class="sd">        Kwargs:</span>
+<span class="sd">            index (Optional[int]):</span>
+<span class="sd">                Positional index of where the playlists are to be inserted.</span>
+
+<span class="sd">            ids (Optional[List(str)]):</span>
+<span class="sd">                Ids to be used to indentify playlists once they are created.</span>
+<span class="sd">                Make sure to provide unique ids for each of the playlists.</span>
+<span class="sd">                The list must be the same length as that of the names.</span>
+<span class="sd">                Recommended to use the following to generate these ids,</span>
+<span class="sd">                import uuid;</span>
+<span class="sd">                names = [&quot;playlist_1&quot;, &quot;playlist_2&quot;, &quot;playlist_3&quot;]</span>
+<span class="sd">                ids = [uuid.uuid4().hex for _ in names]</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[str]:</span>
+<span class="sd">                Ids of the playlists created in the same order</span>
+<span class="sd">                of the names provided.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span>  <span class="n">names</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">create_playlists</span><span class="p">,</span> <span class="p">[</span><span class="n">names</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">ids</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">ids</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.move_playlists_to_index">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.move_playlists_to_index">[docs]</a>
+    <span class="k">def</span> <span class="nf">move_playlists_to_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">ids</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Playlists with the given respective ids will be moved to the given</span>
+<span class="sd">        index.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index (int):Index to which playlists are moved to in the current session.</span>
+
+<span class="sd">            ids (List[str]): Ids of Playlists.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool): True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">move_playlists_to_index</span><span class="p">,</span> <span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="n">ids</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.move_playlists_by_offset">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.move_playlists_by_offset">[docs]</a>
+    <span class="k">def</span> <span class="nf">move_playlists_by_offset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">offset</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">ids</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Playlists with the given respective ids will be moved up or down based</span>
+<span class="sd">        on the given offset.A positive offset will move them down and a</span>
+<span class="sd">        negative offset will move them up. If the offset is greater than the</span>
+<span class="sd">        total number of playlists in the list, then they will be moved to the</span>
+<span class="sd">        end of the list and if the offset is less than 0 then the playlists</span>
+<span class="sd">        will be moved to the very top.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            offset (int):</span>
+<span class="sd">                The number of indexes the selected playlists&#39;s respective</span>
+<span class="sd">                movement must be offsetted by. Note negative is up and</span>
+<span class="sd">                positive is down.</span>
+
+<span class="sd">            Ids (List[str]): Ids of Playlists.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool): True if moved False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">move_playlists_by_offset</span><span class="p">,</span> <span class="p">[</span><span class="n">offset</span><span class="p">,</span> <span class="n">ids</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.set_playlist_name">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.set_playlist_name">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_playlist_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the name of the playlist with the given id.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            id (str): Id of the playlist whose name needs to be set</span>
+
+<span class="sd">            name (str): Name that needs to be set to the playlist</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool): True if set False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_playlist_name</span><span class="p">,</span> <span class="p">[</span><span class="nb">id</span><span class="p">,</span> <span class="n">name</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.set_bg_mode">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.set_bg_mode">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_bg_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span><span class="nb">int</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the Background-Mode(BG Mode) to be used in the session.</span>
+<span class="sd">        The BG Mode is relevant only if a BG playlist is set. The various</span>
+<span class="sd">        BG Modes can be set using integers to identify them. The following</span>
+<span class="sd">        are the integers which can be used to set the various available</span>
+<span class="sd">        BG modes,</span>
+<span class="sd">        1 - Wipe Mode</span>
+<span class="sd">        2 - Side by Side Mode</span>
+<span class="sd">        3 - Top to Bottom Mode</span>
+<span class="sd">        4 - Picture in Picture Mode</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            mode (int):</span>
+<span class="sd">                The integer that represents the BG Mode that needs to be set.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool): True if set False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_bg_mode</span><span class="p">,</span> <span class="p">[</span><span class="n">mode</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_bg_mode">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_bg_mode">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_bg_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the integer that represents the current Background Mode</span>
+<span class="sd">        that is set. Note that BG modes are relevant only if a BG playlist</span>
+<span class="sd">        is currently present in the Session. Based on the current BG Mode,</span>
+<span class="sd">        one of the following integers will be returned,</span>
+<span class="sd">        1 - Wipe Mode</span>
+<span class="sd">        2 - Side by Side Mode</span>
+<span class="sd">        3 - Top to Bottom Mode</span>
+<span class="sd">        4 - Picture in Picture Mode</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int : Integer representing the current BG mode.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_bg_mode</span><span class="p">)</span></div>
+
+
+    <span class="c1">###########################################################################</span>
+    <span class="c1"># Clip Methods                                                            #</span>
+    <span class="c1">###########################################################################</span>
+
+<div class="viewcode-block" id="SessionApi.create_clips">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.create_clips">[docs]</a>
+    <span class="k">def</span> <span class="nf">create_clips</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">playlist_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">paths</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]],</span>
+        <span class="n">index</span><span class="p">:</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ids</span><span class="p">:</span><span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates clips with the given paths in the playlist of the given</span>
+<span class="sd">        playlist id. The paths can also be data-base ids or web-urls as long</span>
+<span class="sd">        as mechanisms for the core application to find the media file from the</span>
+<span class="sd">        given paths are in place. The created playlists will be inserted into</span>
+<span class="sd">        the given index if provided otherwise the clips will be inserted at</span>
+<span class="sd">        the bottom of the playlist. If ids are provided, they will be used to</span>
+<span class="sd">        identify the playlists. Make sure the provided ids are uniqiue.</span>
+<span class="sd">        Recommended to use the following to generate these ids,</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            import uuid;</span>
+<span class="sd">            paths = [&quot;path/to/clip_1&quot;, (&quot;path/to/clip_2&quot;, &quot;path/to/audio_clip_2&quot;), &quot;path/to/clip_3&quot;]</span>
+<span class="sd">            ids = [uuid.uuid4().hex for _ in paths]</span>
+
+<span class="sd">        If no ids are provided, unique ids will be autogenerated. Eitherways</span>
+<span class="sd">        the ids of the created clips will be retured in the same order of the</span>
+<span class="sd">        given paths. Note that all the attributes (attrs) of the clips will</span>
+<span class="sd">        also be fetched and available in the session as clips are created.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            playlist_id (str):</span>
+<span class="sd">                Id of the playlist into which the clips needs to be created.</span>
+
+<span class="sd">            paths (List[Union[str, Tuple[str, str]]):</span>
+<span class="sd">                Paths to media for which clips need to be created.</span>
+<span class="sd">                The path can be of a string, or a tuple of two strings.</span>
+<span class="sd">                If given as a tuple, first string represents the video media path,</span>
+<span class="sd">                and second string is the audio media path.</span>
+
+<span class="sd">        Kwargs:</span>
+<span class="sd">            index (Optional[int]):</span>
+<span class="sd">                Optional positional index where the</span>
+<span class="sd">                clips need to be inserted.</span>
+
+<span class="sd">            ids (Optional[List[str]]):</span>
+<span class="sd">                Optional unique ids that need to be used for</span>
+<span class="sd">                each of the created clips.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[str]: Ids of the created clips</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span>  <span class="n">paths</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">create_clips</span><span class="p">,</span> <span class="p">[</span><span class="n">playlist_id</span><span class="p">,</span> <span class="n">paths</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">ids</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_clips">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_clips">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_clips</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the ids of the clips in the playlist of the given id.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            id (str): Id of the playlist</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[str]: Ids of the clips</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_clips</span><span class="p">,</span> <span class="p">[</span><span class="nb">id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.set_active_clips">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.set_active_clips">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_active_clips</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">playlist_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">clip_ids</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span><span class="o">-&gt;</span><span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the clips whose ids have been provided to be actove in the</span>
+<span class="sd">        playlist with the given id. Note that each time this method is used</span>
+<span class="sd">        the previously activated clips are replaced. If an empty list is</span>
+<span class="sd">        provided all the clips in the playlist are activated.</span>
+
+<span class="sd">        Note that only active clips will be considered in the sequence of</span>
+<span class="sd">        clips constructed for any given playlist.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            playlist_id (str): Id of the playlist</span>
+
+<span class="sd">            clip_ids (List[str]): Ids of clips.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_active_clips</span><span class="p">,</span> <span class="p">[</span><span class="n">playlist_id</span><span class="p">,</span> <span class="n">clip_ids</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_active_clips">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_active_clips">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_active_clips</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the ids of the clips that have been activated in the playlist</span>
+<span class="sd">        of the given id.</span>
+
+<span class="sd">        Note that only active clips will be considered in the sequence of</span>
+<span class="sd">        clips constructed for any given playlist.</span>
+
+<span class="sd">        If no particular list of clips were activated by the user, then all</span>
+<span class="sd">        the clips in the playlists will be activated and returned.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            id (str): Id of the Playlist</span>
+
+<span class="sd">        Return:</span>
+<span class="sd">            list[str]: Ids of the clips</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_active_clips</span><span class="p">,</span> <span class="p">[</span><span class="nb">id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.move_clips_to_index">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.move_clips_to_index">[docs]</a>
+    <span class="k">def</span> <span class="nf">move_clips_to_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">ids</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Move clips with the given ids in their respective playlist to the</span>
+<span class="sd">        given index. Note that all clips must be part of the same playlist</span>
+<span class="sd">        in order to perform this operation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index (int): Index to which clips are moved to in the current playlist.</span>
+
+<span class="sd">            ids (List[str]): Ids of clips.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool): True if success False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">move_clips_to_index</span><span class="p">,</span> <span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="n">ids</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.move_clips_by_offset">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.move_clips_by_offset">[docs]</a>
+    <span class="k">def</span> <span class="nf">move_clips_by_offset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">offset</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">ids</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Move clips with the given ids in their respective playlists up or down</span>
+<span class="sd">        based on the offset. Positive offset moves clips down and negative</span>
+<span class="sd">        offset moves clips up. If offset is greater than total number of</span>
+<span class="sd">        clips in the playlist, then clips are moved to the bottom. And if</span>
+<span class="sd">        offset is less than 0 then clips are moved to the top.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            offset (int):</span>
+<span class="sd">                The number of indexes the selected clips&#39;s respective</span>
+<span class="sd">                movement must be offsetted by. Note negative is up and</span>
+<span class="sd">                positive is down.</span>
+
+<span class="sd">            ids (List[str]): Ids of clips that need to be moved.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool): True if moved False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">move_clips_by_offset</span><span class="p">,</span> <span class="p">[</span><span class="n">offset</span><span class="p">,</span> <span class="n">ids</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.delete_clips_permanently">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.delete_clips_permanently">[docs]</a>
+    <span class="k">def</span> <span class="nf">delete_clips_permanently</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ids</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Permanently delete clips with the given ids.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ids (List[str]): Ids of clips that need to be permanently deleted</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool): True if deleted permanently False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delete_clips_permanently</span><span class="p">,</span> <span class="p">[</span><span class="n">ids</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_current_clip">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_current_clip">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_current_clip</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the id of the current clip of the session.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str : Id of the current clip</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_current_clip</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.set_current_clip">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.set_current_clip">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_current_clip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the clip with the given id to be current clip of the Session.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            id (str):</span>
+<span class="sd">                Id of clip to set as current clip.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool): True if set False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_current_clip</span><span class="p">,</span> <span class="p">[</span><span class="nb">id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_playlist_of_clip">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_playlist_of_clip">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_playlist_of_clip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the id of the playlist in which the clip of the given id is</span>
+<span class="sd">        currently present.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            id (str): Id of the clip</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Id of the playlist</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_playlist_of_clip</span><span class="p">,</span> <span class="p">[</span><span class="nb">id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.set_clip_path">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.set_clip_path">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_clip_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span><span class="nb">object</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the path of the media for the clip with the given id. The path</span>
+<span class="sd">        can also be a data-base id or web url as long mechanisms for the core</span>
+<span class="sd">        application to find the media file from the given path are in place.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            id (str): Id of the clip whose path needs to be set.</span>
+<span class="sd">            path (str): Path to the media</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool): True if set False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_clip_path</span><span class="p">,</span> <span class="p">[</span><span class="nb">id</span><span class="p">,</span> <span class="n">path</span><span class="p">])</span></div>
+
+
+    <span class="c1">###########################################################################</span>
+    <span class="c1"># Custom Attr Methods                                                     #</span>
+    <span class="c1">###########################################################################</span>
+
+<div class="viewcode-block" id="SessionApi.set_custom_session_attr">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.set_custom_session_attr">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_custom_session_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span><span class="n">Any</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set custom attributes that will be associated with the RPA session.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            attr_id(str): Id of the attribute</span>
+<span class="sd">            value(Any): Value to be set</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if successfully set</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_custom_session_attr</span><span class="p">,</span> <span class="p">[</span><span class="n">attr_id</span><span class="p">,</span> <span class="n">value</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_custom_session_attr">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_custom_session_attr">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_custom_session_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr_id</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get custom attributes that are associated with the RPA session.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            attr_id(str): Id of the attribute</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Any: Value of the given Id</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_custom_session_attr</span><span class="p">,</span> <span class="p">[</span><span class="n">attr_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_custom_session_attr_ids">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_custom_session_attr_ids">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_custom_session_attr_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get custom attribute ids that are associated with the RPA session.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[str]: Ids of attributes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_custom_session_attr_ids</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.set_custom_playlist_attr">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.set_custom_playlist_attr">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_custom_playlist_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">playlist_id</span><span class="p">,</span> <span class="n">attr_id</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set custom attributes that will be associated with the playlist of the</span>
+<span class="sd">        given playlist Id.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            playlist_id(str): Id of the playlist</span>
+<span class="sd">            attr_id(str): Id of the attribute</span>
+<span class="sd">            value(Any): Value to be set</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if successfully set</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_custom_playlist_attr</span><span class="p">,</span> <span class="p">[</span><span class="n">playlist_id</span><span class="p">,</span> <span class="n">attr_id</span><span class="p">,</span> <span class="n">value</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_custom_playlist_attr">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_custom_playlist_attr">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_custom_playlist_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">playlist_id</span><span class="p">,</span> <span class="n">attr_id</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get custom attributes that are associated with the playlist of the</span>
+<span class="sd">        given playlist Id.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            playlist_id(str): Id of the playlist</span>
+<span class="sd">            attr_id(str): Id of the attribute</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Any: Value of the given Id</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_custom_playlist_attr</span><span class="p">,</span> <span class="p">[</span><span class="n">playlist_id</span><span class="p">,</span> <span class="n">attr_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_custom_playlist_attr_ids">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_custom_playlist_attr_ids">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_custom_playlist_attr_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">playlist_id</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get custom attribute ids that are associated with the playlist of the</span>
+<span class="sd">        given playlist Id.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            playlist_id(str): Id of the playlist</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[str]: Ids of attributes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_custom_playlist_attr_ids</span><span class="p">,</span> <span class="p">[</span><span class="n">playlist_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.set_custom_clip_attr">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.set_custom_clip_attr">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_custom_clip_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">,</span> <span class="n">attr_id</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set custom attributes that will be associated with the clip of the</span>
+<span class="sd">        given clip Id.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id(str): Id of the clip</span>
+<span class="sd">            attr_id(str): Id of the attribute</span>
+<span class="sd">            value(Any): Value to be set</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if successfully set</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_custom_clip_attr</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">attr_id</span><span class="p">,</span> <span class="n">value</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_custom_clip_attr">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_custom_clip_attr">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_custom_clip_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">,</span> <span class="n">attr_id</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get custom attributes that are associated with the clip of the</span>
+<span class="sd">        given clip Id.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id(str): Id of the clip</span>
+<span class="sd">            attr_id(str): Id of the attribute</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Any: Value of the given Id</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_custom_clip_attr</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">attr_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_custom_clip_attr_ids">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_custom_clip_attr_ids">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_custom_clip_attr_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get custom attribute ids that are associated with the clip of the</span>
+<span class="sd">        given clip Id.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id(str): Id of the clip</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[str]: Ids of attributes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_custom_clip_attr_ids</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">])</span></div>
+
+
+    <span class="c1">###########################################################################</span>
+    <span class="c1"># Clip Attr Methods                                                       #</span>
+    <span class="c1">###########################################################################</span>
+
+<div class="viewcode-block" id="SessionApi.get_attrs_metadata">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_attrs_metadata">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_attrs_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the metadata of all the attributes (attrs) in the current Session.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict : Dict of the metadata of all attrs</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            Here is an example of how the returned dict will look like,</span>
+
+<span class="sd">            .. code-block:: python</span>
+
+<span class="sd">                {</span>
+<span class="sd">                    &#39;play_order&#39;:</span>
+<span class="sd">                    {</span>
+<span class="sd">                        &#39;name&#39;: &#39;Play Order&#39;,</span>
+<span class="sd">                        &#39;data_type&#39;: &#39;int&#39;,</span>
+<span class="sd">                        &#39;is_read_only&#39;: True,</span>
+<span class="sd">                        &#39;is_keyable&#39;: False,</span>
+<span class="sd">                        &#39;default_value&#39;: None</span>
+<span class="sd">                    },</span>
+<span class="sd">                    &#39;media_path&#39;:</span>
+<span class="sd">                    {</span>
+<span class="sd">                        &#39;name&#39;: &#39;Media Path&#39;,</span>
+<span class="sd">                        &#39;data_type&#39;: &#39;str&#39;,</span>
+<span class="sd">                        &#39;is_read_only&#39;: True,</span>
+<span class="sd">                        &#39;is_keyable&#39;: False,</span>
+<span class="sd">                        &#39;default_value&#39;: &#39;&#39;,</span>
+<span class="sd">                    }</span>
+<span class="sd">                }</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_attrs_metadata</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_attr_value">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_attr_value">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_attr_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">attr_id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">object</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the value of the attribute of the clip of the playlist whose respective</span>
+<span class="sd">        ids are given.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): Id of the Clip</span>
+<span class="sd">            attr_id (str): Id of the Attr</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            object: Value of the attribute</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_attr_value</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">attr_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_default_attr_value">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_default_attr_value">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_default_attr_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">object</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the default value which is metadata of the</span>
+<span class="sd">        attribute with the given id</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            id (str): Id of the attribute</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            object: Default value of attribute</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_default_attr_value</span><span class="p">,</span> <span class="p">[</span><span class="nb">id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_attrs">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_attrs">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_attrs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get ids of all the attrs in the session</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[str]: Ids of all attrs in the session</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_attrs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_attr_name">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_attr_name">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_attr_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the name of attr with the given id</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            id (str): Id of the attr</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Name of the attr</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_attr_name</span><span class="p">,</span> <span class="p">[</span><span class="nb">id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_read_write_attrs">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_read_write_attrs">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_read_write_attrs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the ids of all the attrs that are editable that</span>
+<span class="sd">        is both readable and writable.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[str]: Ids of attrs that are editable</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_read_write_attrs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_read_only_attrs">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_read_only_attrs">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_read_only_attrs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the ids of all the attrs that are non-editable that is read-only.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[str]: Ids of attrs that are non-editable</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_read_only_attrs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_keyable_attrs">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_keyable_attrs">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_keyable_attrs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the ids of all the attrs that are keyable.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[str]: Ids of attrs that are keyable</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_keyable_attrs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.is_attr_read_only">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.is_attr_read_only">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_attr_read_only</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns True if the attr of the given id is non-editable</span>
+<span class="sd">        that is read-only.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            id (str): Id of the attr.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if attr of given id is read-only else False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">is_attr_read_only</span><span class="p">,</span> <span class="p">[</span><span class="nb">id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.is_attr_keyable">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.is_attr_keyable">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_attr_keyable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns True if the attr of the given id is keyable.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            id (str): Id of the attr.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if attr of given id is keyable else False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">is_attr_keyable</span><span class="p">,</span> <span class="p">[</span><span class="nb">id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_attr_data_type">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_attr_data_type">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_attr_data_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the data-type of the attr with the given id. Note that the</span>
+<span class="sd">        data-type of the various attrs are represented as the following strings,</span>
+<span class="sd">        &quot;int&quot; - integer</span>
+<span class="sd">        &quot;float&quot; - float</span>
+<span class="sd">        &quot;str&quot; - string</span>
+<span class="sd">        &quot;bool&quot; - boolean</span>
+<span class="sd">        &quot;path&quot; - file path</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            id (str): Id of the attr</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: String name of the data-type as mentioned in description</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_attr_data_type</span><span class="p">,</span> <span class="p">[</span><span class="nb">id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.set_attr_values">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.set_attr_values">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_attr_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr_values</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">])</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the value of the attributes from the given list.</span>
+<span class="sd">        Example of how attr_values should look like,</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            [</span>
+<span class="sd">                (playlist_id_1, clip_id_1, attr_id_1, value),</span>
+<span class="sd">                (playlist_id_1, clip_id_1, attr_id_2, value),</span>
+<span class="sd">                (playlist_id_1, clip_id_2, attr_id_1, value),</span>
+<span class="sd">                (playlist_id_2, clip_id_3, attr_id_1, value),</span>
+<span class="sd">                (playlist_id_2, clip_id_4, attr_id_2, value)</span>
+<span class="sd">            ]</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            attr_values (List[Tuple]):</span>
+<span class="sd">                List of tuples containing playlist id, clip id, attr id and</span>
+<span class="sd">                value.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool): True if set False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_attr_values</span><span class="p">,</span> <span class="p">[</span><span class="n">attr_values</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.refresh_attrs">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.refresh_attrs">[docs]</a>
+    <span class="k">def</span> <span class="nf">refresh_attrs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ids</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">]])</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Refresh session cache with the latest values for attrs of clips of</span>
+<span class="sd">        playlists with the given ids.</span>
+
+<span class="sd">        Example of how ids should look like,</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            [</span>
+<span class="sd">                (playlist_id_1, clip_id_1, attr_id_1),</span>
+<span class="sd">                (playlist_id_1, clip_id_1, attr_id_2),</span>
+<span class="sd">                (playlist_id_1, clip_id_2, attr_id_1),</span>
+<span class="sd">                (playlist_id_2, clip_id_3, attr_id_1),</span>
+<span class="sd">                (playlist_id_2, clip_id_4, attr_id_2)</span>
+<span class="sd">            ]</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ids (List[Tuple[str]]):</span>
+<span class="sd">                List of tuples containing playlist id, clip id and attr id.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool): True if refreshed False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">refresh_attrs</span><span class="p">,</span> <span class="p">[</span><span class="n">ids</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_attr_value_at">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_attr_value_at">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_attr_value_at</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">attr_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span><span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the value of the keyable attribute for the clip at the</span>
+<span class="sd">        given key (frame) with respective ids.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): Id of the Clip</span>
+<span class="sd">            attr_id (str): Id of the Attr</span>
+<span class="sd">            key (int): Frame of the Clip</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            object: Value of the attribute at given key</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_attr_value_at</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">attr_id</span><span class="p">,</span> <span class="n">key</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">value</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.set_attr_values_at">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.set_attr_values_at">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_attr_values_at</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr_values_at</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">])</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the value of the keyable attributes at the given frame.</span>
+
+<span class="sd">        Example of how attr_values_at should look like,</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            [</span>
+<span class="sd">                (playlist_id_1, clip_id_1, attr_id_1, key, value),</span>
+<span class="sd">                (playlist_id_1, clip_id_1, attr_id_2, key, value),</span>
+<span class="sd">                (playlist_id_1, clip_id_2, attr_id_1, key, value),</span>
+<span class="sd">                (playlist_id_2, clip_id_3, attr_id_1, key, value),</span>
+<span class="sd">                (playlist_id_2, clip_id_4, attr_id_2, key, value)</span>
+<span class="sd">            ]</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            attr_values_at (List[Tuple]):</span>
+<span class="sd">                List of tuples containing playlist id, clip id, attr id,</span>
+<span class="sd">                key (frame) and value.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool): True if set False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_attr_values_at</span><span class="p">,</span> <span class="p">[</span><span class="n">attr_values_at</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.clear_attr_values_at">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.clear_attr_values_at">[docs]</a>
+    <span class="k">def</span> <span class="nf">clear_attr_values_at</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr_values_at</span><span class="p">:</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">])</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Clear the value of the keyable attributes from the list at the given frame.</span>
+
+<span class="sd">        Example of how attr_values_at should look like,</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            [</span>
+<span class="sd">                (playlist_id_1, clip_id_1, attr_id_1, key),</span>
+<span class="sd">                (playlist_id_1, clip_id_1, attr_id_2, key),</span>
+<span class="sd">                (playlist_id_1, clip_id_2, attr_id_1, key),</span>
+<span class="sd">                (playlist_id_2, clip_id_3, attr_id_1, key),</span>
+<span class="sd">                (playlist_id_2, clip_id_4, attr_id_2, key)</span>
+<span class="sd">            ]</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            attr_values_at (List[Tuple]):</span>
+<span class="sd">                List of tuples containing playlist id, clip id, attr id, and key (frame).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool): True if cleared False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clear_attr_values_at</span><span class="p">,</span> <span class="p">[</span><span class="n">attr_values_at</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_attr_keys">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_attr_keys">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_attr_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clip_id</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">attr_id</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the list of key frames of the keyable attribute within the clip.</span>
+<span class="sd">        For non-keyable attributes, the list returned will be empty.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clip_id (str): Id of the Clip</span>
+<span class="sd">            attr_id (str): Id of the Attr</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[int]: List of clip key frames</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_attr_keys</span><span class="p">,</span> <span class="p">[</span><span class="n">clip_id</span><span class="p">,</span> <span class="n">attr_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_session_str">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_session_str">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_session_str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the string representation of the session object. This method might</span>
+<span class="sd">        return a pair of strings (skin, core) when running in multi-process</span>
+<span class="sd">        mode.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str:</span>
+<span class="sd">                string representation of the session object</span>
+
+<span class="sd">            tuple[str]:</span>
+<span class="sd">                Pair of string representations of the session objects</span>
+<span class="sd">                (skin, core) when running in multi-process mode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_session_str</span><span class="p">)</span></div>
+
+
+    <span class="c1">###########################################################################</span>
+    <span class="c1"># MISC                                                                    #</span>
+    <span class="c1">###########################################################################</span>
+
+
+<div class="viewcode-block" id="SessionApi.set_current_frame_mode">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.set_current_frame_mode">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_current_frame_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span><span class="nb">int</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the behavior of the current-frame when changing playlists.</span>
+
+<span class="sd">        The following are the available modes,</span>
+
+<span class="sd">        **0 \: Same Across Playlists**</span>
+
+<span class="sd">        Current frame will be synced across all playlists.</span>
+<span class="sd">        In the case when a single clip is selected in a playlist,</span>
+<span class="sd">        current frame defaults to first frame of the clip.</span>
+
+<span class="sd">        **1 \: First Frame**</span>
+
+<span class="sd">        Current frame will default to first frame of a selected clip</span>
+<span class="sd">        or sequence of clips within a playlist or among playlists.</span>
+<span class="sd">        Only in the case when BG playlist exist, current frame will</span>
+<span class="sd">        be synced across FG and BG playlists.</span>
+
+<span class="sd">        **2 \: Remember Last**</span>
+
+<span class="sd">        Current frame will be set to last frame it was at for the</span>
+<span class="sd">        playlist. Only in the case when BG playlist exist, current</span>
+<span class="sd">        frame will be synced across FG and BG playlists.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            mode (int): Mode to set.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool): True of set False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_current_frame_mode</span><span class="p">,</span> <span class="p">[</span><span class="n">mode</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="SessionApi.get_current_frame_mode">
+<a class="viewcode-back" href="../../../rpa_api_modules/session_api.html#rpa.api.session_api.SessionApi.get_current_frame_mode">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_current_frame_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the behavior mode of the current frame when changing playlists.</span>
+
+<span class="sd">        The following are the available modes,</span>
+
+<span class="sd">        **0 \: Same Across Playlists**</span>
+
+<span class="sd">        Current frame will be synced across all playlists.</span>
+<span class="sd">        In the case when a single clip is selected in a playlist,</span>
+<span class="sd">        current frame defaults to first frame of the clip.</span>
+
+<span class="sd">        **1 \: First Frame**</span>
+
+<span class="sd">        Current frame will default to first frame of a selected clip</span>
+<span class="sd">        or sequence of clips within a playlist or among playlists.</span>
+<span class="sd">        Only in the case when BG playlist exist, current frame will</span>
+<span class="sd">        be synced across FG and BG playlists.</span>
+
+<span class="sd">        **2 \: Remember Last**</span>
+
+<span class="sd">        Current frame will be set to last frame it was at for the</span>
+<span class="sd">        playlist. Only in the case when BG playlist exist, current</span>
+<span class="sd">        frame will be synced across FG and BG playlists.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Behavior mode of current frame</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_current_frame_mode</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Review Plugin API (RPA)</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rpa_api_modules/index.html">RPA API Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rpa_widgets.html">RPA Widgets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../open_rv_implementation.html">Open RV Implmentation</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Sony Pictures Imageworks (SPI).
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

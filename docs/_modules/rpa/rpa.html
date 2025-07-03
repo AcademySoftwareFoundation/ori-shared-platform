@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>rpa.rpa &#8212; Review Plugin API (RPA) 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for rpa.rpa</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">RPA</span>
+<span class="sd">===</span>
+
+<span class="sd">Interface to access all RPA API modules.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">rpa.api.session_api</span> <span class="kn">import</span> <span class="n">SessionApi</span>
+<span class="kn">from</span> <span class="nn">rpa.api.annotation_api</span> <span class="kn">import</span> <span class="n">AnnotationApi</span>
+<span class="kn">from</span> <span class="nn">rpa.api.timeline_api</span> <span class="kn">import</span> <span class="n">TimelineApi</span>
+<span class="kn">from</span> <span class="nn">rpa.api.color_api</span> <span class="kn">import</span> <span class="n">ColorApi</span>
+<span class="kn">from</span> <span class="nn">rpa.api.viewport_api</span> <span class="kn">import</span> <span class="n">ViewportApi</span>
+<span class="kn">from</span> <span class="nn">rpa.delegate_mngr</span> <span class="kn">import</span> <span class="n">DelegateMngr</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+
+
+<div class="viewcode-block" id="Rpa">
+<a class="viewcode-back" href="../../rpa_api_modules/rpa.html#rpa.rpa.Rpa">[docs]</a>
+<span class="k">class</span> <span class="nc">Rpa</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_api</span><span class="p">,</span> <span class="n">logger_api</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__config_api</span> <span class="o">=</span> <span class="n">config_api</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__logger_api</span> <span class="o">=</span> <span class="n">logger_api</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__session_api</span> <span class="o">=</span> <span class="n">SessionApi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__logger_api</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__annotation_api</span> <span class="o">=</span> <span class="n">AnnotationApi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__logger_api</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__timeline_api</span> <span class="o">=</span> <span class="n">TimelineApi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__logger_api</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__color_api</span> <span class="o">=</span> <span class="n">ColorApi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__logger_api</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__viewport_api</span> <span class="o">=</span> <span class="n">ViewportApi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__logger_api</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__session_id</span> <span class="o">=</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span> <span class="o">=</span> <span class="n">DelegateMngr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__logger_api</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_delegate_mngr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">session_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__session_id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">session_api</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__session_api</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">config_api</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__config_api</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">logger_api</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__logger_api</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">timeline_api</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__timeline_api</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">annotation_api</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__annotation_api</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">color_api</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__color_api</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">viewport_api</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__viewport_api</span>
+
+<div class="viewcode-block" id="Rpa.close">
+<a class="viewcode-back" href="../../rpa_api_modules/rpa.html#rpa.rpa.Rpa.close">[docs]</a>
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__delegate_mngr</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">Review Plugin API (RPA)</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rpa_api_modules/index.html">RPA API Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rpa_widgets.html">RPA Widgets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../open_rv_implementation.html">Open RV Implmentation</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Sony Pictures Imageworks (SPI).
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Introduction &#8212; Review Plugin API (RPA) 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
+    <script src="_static/documentation_options.js?v=01f34227"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Introduction" href="introduction.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">¶</a></h1>
+<nav class="contents local" id="contents">
+<ul class="simple">
+<li><p><a class="reference internal" href="#value-proposition" id="id1">Value Proposition</a></p></li>
+<li><p><a class="reference internal" href="#why-rpa-widgets-work-across-review-playback-systems" id="id2">Why RPA-Widgets work across Review-Playback-Systems ?</a></p></li>
+<li><p><a class="reference internal" href="#rpa-is-powered-by-academy-sci-tech-award-winning-itview-s-concepts" id="id3">RPA is powered by Academy Sci-Tech Award-winning Itview’s concepts!</a></p></li>
+</ul>
+</nav>
+<section id="value-proposition">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">Value Proposition</a><a class="headerlink" href="#value-proposition" title="Link to this heading">¶</a></h2>
+<p>To empower VFX and Animation studios to use their custom built review workflows and tools across any review-playback system (such as OpenRV or xStudio),
+RPA provides a unified collection of <strong>API modules</strong> and <strong>widgets</strong>.</p>
+<p>RPA is designed for pipeline developers to build their review workflows and tools once and deploy them seamlessly across any review-playback system that supports the RPA implementation.</p>
+<p>RPA is an abstraction layer between the review widgets you create and the review-playback systems you use.</p>
+<a class="reference internal image-reference" href="_images/rpa_value_proposition.png"><img alt="RPA value proposition" class="align-center" src="_images/rpa_value_proposition.png" style="width: 480.0px; height: 368.0px;" /></a>
+</section>
+<section id="why-rpa-widgets-work-across-review-playback-systems">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">Why RPA-Widgets work across Review-Playback-Systems ?</a><a class="headerlink" href="#why-rpa-widgets-work-across-review-playback-systems" title="Link to this heading">¶</a></h2>
+<p>RPA widgets work consistently across different review-playback systems because,</p>
+<ol class="arabic simple">
+<li><p>RPA widgets are built using <strong>RPA-API</strong> instead of any particular review-playback-system’s API.</p></li>
+<li><p>RPA manages its own <strong>Session</strong>.</p></li>
+</ol>
+<p>Whenever a RPA widget using the RPA API creates playlists or clips, or adds annotations, text notes, or color corrections, RPA updates and maintains this information in its own Session. This Session is completely independent of the underlying review-playback-system’s (like OpenRV or xStudio) session. That means the widgets you build with RPA-API rely only on RPA’s Session and not on the specific review application—ensuring compatibility and flexibility across platforms.</p>
+<img alt="RPA Session" class="align-center" src="_images/rpa_session_wiring.png" />
+</section>
+<section id="rpa-is-powered-by-academy-sci-tech-award-winning-itview-s-concepts">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">RPA is powered by Academy Sci-Tech Award-winning Itview’s concepts!</a><a class="headerlink" href="#rpa-is-powered-by-academy-sci-tech-award-winning-itview-s-concepts" title="Link to this heading">¶</a></h2>
+<p>By using RPA, pipeline developers can instantly tap into a world-class review session which has been built on top of the core-concepts of <strong>Sony Pictures Imageworks’ Academy SciTech Award-winning playback system, Itview</strong>.
+With RPA, setting up a review session is simple:
+You start with a new Session,</p>
+<ul class="simple">
+<li><p>Inside a <strong>Session</strong>, you can organize your work using Playlists.</p></li>
+<li><p>Each <strong>Playlist</strong> contains Clips, which represent shots or media files.</p></li>
+<li><p>Every <strong>Clip</strong> can store detailed information like attributes, annotations (drawings and texts), and even color-corrections.</p></li>
+</ul>
+<p>In short, RPA makes it easy to <strong>build powerful, studio-grade review tools—without reinventing the wheel</strong>.</p>
+<img alt="RPA value proposition" class="align-center" src="_images/rpa_session.png" />
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#value-proposition">Value Proposition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#why-rpa-widgets-work-across-review-playback-systems">Why RPA-Widgets work across Review-Playback-Systems ?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#rpa-is-powered-by-academy-sci-tech-award-winning-itview-s-concepts">RPA is powered by Academy Sci-Tech Award-winning Itview’s concepts!</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="rpa_api_modules/index.html">RPA API Modules</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="rpa_api_modules/delegate_manager.html">Delegate Manager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rpa_api_modules/rpa.html">RPA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rpa_api_modules/session_api.html">Session API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rpa_api_modules/timeline_api.html">Timeline API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rpa_api_modules/viewport_api.html">Viewport API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rpa_api_modules/color_api.html">Color API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rpa_api_modules/annotation_api.html">Annotation API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="rpa_widgets.html">RPA Widgets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="rpa_widgets.html#where-are-the-rpa-widgets">Where are the RPA widgets?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rpa_widgets.html#how-to-create-an-rpa-widget">How to create an RPA widget ?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rpa_widgets.html#how-to-make-rpa-widgets-available-inside-of-rv">How to make RPA widgets available inside of RV ?</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="open_rv_implementation.html">Open RV Implmentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="open_rv_implementation.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="open_rv_implementation.html#rpa-core-rv-package">RPA Core - Rv Package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="open_rv_implementation.html#rpa-widgets-rv-package">RPA Widgets - Rv Package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="open_rv_implementation.html#how-to-build-and-install-the-above-rpa-rv-packages">How to build and install the above RPA RV Packages ?</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="#">Review Plugin API (RPA)</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rpa_api_modules/index.html">RPA API Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rpa_widgets.html">RPA Widgets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="open_rv_implementation.html">Open RV Implmentation</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+      <li>Next: <a href="introduction.html" title="next chapter">Introduction</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Sony Pictures Imageworks (SPI).
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

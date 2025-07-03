@@ -1,0 +1,12 @@
+#!/bin/bash
+
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+if [[ "$SCRIPT_DIR" != /spfs* ]]; then
+    SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+    PROJ_DIR="$(dirname $SCRIPT_DIR)"
+    PROJ_PARENT_DIR="$(dirname $PROJ_DIR)"
+    export PYTHONPATH="$PROJ_PARENT_DIR:$PYTHONPATH"
+    export RV_SUPPORT_PATH=$PROJ_DIR/local_install/lib/open_rv
+fi
+
+exec "$RV_HOME/bin/rv" "$@"
