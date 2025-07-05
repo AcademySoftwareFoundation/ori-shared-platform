@@ -1,7 +1,9 @@
 try:
     from PySide2 import QtCore, QtWidgets, QtGui
+    from PySide2.QtWidgets import QShortcut
 except ImportError:
     from PySide6 import QtCore, QtWidgets, QtGui
+    from PySide6.QtGui import QShortcut
 from rpa.widgets.session_manager.clips_controller.view.model import Model
 from rpa.widgets.session_manager.clips_controller.view.context_menu \
     import ContextMenu
@@ -82,19 +84,19 @@ class ClipsController(QtCore.QObject):
 
         self.load_preferences()
 
-        copy_shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+C"), self.__view.table)
+        copy_shortcut = QShortcut(QtGui.QKeySequence("Ctrl+C"), self.__view.table)
         copy_shortcut.setContext(QtCore.Qt.WidgetShortcut)
         copy_shortcut.activated.connect(self.SIG_COPY)
 
-        cut_shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+X"), self.__view.table)
+        cut_shortcut = QShortcut(QtGui.QKeySequence("Ctrl+X"), self.__view.table)
         cut_shortcut.setContext(QtCore.Qt.WidgetShortcut)
         cut_shortcut.activated.connect(self.SIG_CUT)
 
-        paste_shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+V"), self.__view.table)
+        paste_shortcut = QShortcut(QtGui.QKeySequence("Ctrl+V"), self.__view.table)
         paste_shortcut.setContext(QtCore.Qt.WidgetShortcut)
         paste_shortcut.activated.connect(self.SIG_PASTE)
 
-        delete_shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("Delete"), self.__view.table)
+        delete_shortcut = QShortcut(QtGui.QKeySequence("Delete"), self.__view.table)
         delete_shortcut.setContext(QtCore.Qt.WidgetShortcut)
         delete_shortcut.activated.connect(self.delete_permanently)
 
