@@ -5,7 +5,10 @@ Viewport API
 Manage viewport transforms and overlays.
 """
 
-from PySide2 import QtCore
+try:
+    from PySide2 import QtCore
+except ImportError:
+    from PySide6 import QtCore
 from typing import List, Optional, Tuple, Dict
 from rpa.delegate_mngr import DelegateMngr
 from rpa.session_state.utils import Point

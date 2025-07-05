@@ -1,4 +1,7 @@
-from PySide2 import QtWidgets
+try:
+    from PySide2 import QtWidgets
+except ImportError:
+    from PySide6 import QtWidgets
 
 
 class NonHideQMenu(QtWidgets.QMenu):

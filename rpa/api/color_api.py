@@ -15,7 +15,10 @@ A color-correction can either be read-only or read-write.
 from rpa.delegate_mngr import DelegateMngr
 from rpa.session_state.color_corrections import \
     ColorTimer, Grade, ColorCorrection
-from PySide2 import QtCore
+try:
+    from PySide2 import QtCore
+except ImportError:
+    from PySide6 import QtCore
 from typing import List, Union, Optional, Dict, Tuple
 
 

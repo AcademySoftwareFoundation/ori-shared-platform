@@ -1,4 +1,7 @@
-from PySide2 import QtGui, QtWidgets
+try:
+    from PySide2 import QtGui, QtWidgets
+except ImportError:
+    from PySide6 import QtGui, QtWidgets
 
 
 class StripedFrame(QtWidgets.QFrame):

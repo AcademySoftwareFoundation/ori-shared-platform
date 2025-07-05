@@ -1,7 +1,10 @@
 import os
-from PySide2 import QtCore, QtGui, QtNetwork, QtWebEngineCore, QtWebEngineWidgets, QtWebChannel
 
-
+try:
+    from PySide2 import QtCore, QtGui, QtNetwork, QtWebEngineCore, QtWebEngineWidgets, QtWebChannel
+except ImportError:
+    from PySide6 import QtCore, QtGui, QtNetwork, QtWebEngineCore, QtWebEngineWidgets, QtWebChannel
+    
 class WebView(QtWebEngineWidgets.QWebEngineView):
 
     SIG_CONTEXT_MENU = QtCore.Signal(str)

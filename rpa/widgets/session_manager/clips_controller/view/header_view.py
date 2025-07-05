@@ -1,8 +1,13 @@
-from PySide2 import QtCore, QtGui, QtWidgets
+try:
+    from PySide2 import QtCore, QtGui, QtWidgets
+    from PySide2.QtWidgets import QAction
+except ImportError:
+    from PySide6 import QtCore, QtGui, QtWidgets
+    from PySide6.QtGui import QAction
 from rpa.widgets.session_manager.clips_controller.view.model import THUMBNAIL_WIDTH
 
 
-class ActionWithStrData(QtWidgets.QAction):
+class ActionWithStrData(QAction):
     SIG_TRIGGERED = QtCore.Signal(str)
 
     def __init__(self, name, data):
@@ -64,7 +69,7 @@ class HeaderView(QtWidgets.QHeaderView):
 
         for column, header_data in sorted_data.items():
             self.setSectionHidden(column, True)
-            action = QtWidgets.QAction(header_data, self.__clip_attrs_menu)
+            action = QAction(header_data, self.__clip_attrs_menu)
             action.setCheckable(True)
             action.setChecked(False)
             action.setData(column)

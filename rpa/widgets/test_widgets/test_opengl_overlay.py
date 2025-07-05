@@ -1,6 +1,9 @@
 import sys
 import numpy as np
-from PySide2 import QtWidgets, QtGui, QtCore, QtOpenGL
+try:
+    from PySide2 import QtWidgets, QtGui, QtCore, QtOpenGL
+except ImportError:
+    from PySide2 import QtWidgets, QtGui, QtCore, QtOpenGL
 from OpenGL.GL import *
 
 class HtmlTextureRenderer:

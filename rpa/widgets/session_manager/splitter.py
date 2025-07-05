@@ -2,7 +2,10 @@ import time
 from collections import namedtuple
 from contextlib import contextmanager
 from functools import partial
-from PySide2 import QtCore, QtGui, QtWidgets
+try:
+    from PySide2 import QtCore, QtGui, QtWidgets
+except ImportError:
+    from PySide6 import QtCore, QtGui, QtWidgets
 
 
 class SplitterHandle(QtWidgets.QSplitterHandle):

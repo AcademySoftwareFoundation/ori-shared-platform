@@ -1,11 +1,23 @@
-from PySide2.QtWidgets import (
-    QWidget, QVBoxLayout, QPlainTextEdit, QTextEdit, QPushButton,
-    QLabel, QHBoxLayout, QCompleter
-)
-from PySide2.QtCore import Qt, QRegExp, QStringListModel
-from PySide2.QtGui import (
-    QTextCharFormat, QFont, QColor, QSyntaxHighlighter, QKeyEvent
-)
+try:
+    from PySide2.QtWidgets import (
+        QWidget, QVBoxLayout, QPlainTextEdit, QTextEdit, QPushButton,
+        QLabel, QHBoxLayout, QCompleter
+    )
+    from PySide2.QtCore import Qt, QRegExp, QStringListModel
+    from PySide2.QtGui import (
+        QTextCharFormat, QFont, QColor, QSyntaxHighlighter, QKeyEvent
+    )
+except ImportError:
+    from PySide6.QtWidgets import (
+        QWidget, QVBoxLayout, QPlainTextEdit, QTextEdit, QPushButton,
+        QLabel, QHBoxLayout, QCompleter
+    )
+    from PySide6.QtCore import Qt, QRegularExpression, QStringListModel
+    QRegExp = QRegularExpression 
+    from PySide6.QtGui import (
+        QTextCharFormat, QFont, QColor, QSyntaxHighlighter, QKeyEvent
+    )
+
 import traceback
 import io
 import sys

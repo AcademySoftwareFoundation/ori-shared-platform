@@ -1,4 +1,9 @@
-from PySide2 import QtCore, QtGui, QtWidgets
+try:
+    from PySide2 import QtCore, QtGui, QtWidgets
+    from PySide2.QtWidgets import QAction
+except ImportError:
+    from PySide6 import QtCore, QtGui, QtWidgets
+    from PySide6.QtGui import QAction
 from rpa.widgets.timeline.view.line_edit import TimelineLineEdit
 
 
@@ -21,20 +26,20 @@ class TimelineRange(QtWidgets.QToolBar):
             QtCore.QRegularExpression("-?\\d+"), None)
 
         self.__range_scope = range_scope
-        self.__range_scope_action_group = action_group = QtWidgets.QActionGroup(self)
-        self.__range_scope_seq_action = QtWidgets.QAction("Sequence", action_group)
+        self.__range_scope_action_group = action_group = QActionGroup(self)
+        self.__range_scope_seq_action = QAction("Sequence", action_group)
         self.__range_scope_seq_action.setCheckable(True)
-        self.__range_scope_clip_action = QtWidgets.QAction("Clip", action_group)
+        self.__range_scope_clip_action = QAction("Clip", action_group)
         self.__range_scope_clip_action.setCheckable(True)
         action_group.setExclusive(True)
         action_group.triggered.connect(self.__range_scope_selected)
 
-        self.__range_display_mode_ag = action_group = QtWidgets.QActionGroup(self)
-        self.__range_display_mode_frames_action = QtWidgets.QAction("Frames", action_group)
+        self.__range_display_mode_ag = action_group = QActionGroup(self)
+        self.__range_display_mode_frames_action = QAction("Frames", action_group)
         self.__range_display_mode_frames_action.setCheckable(True)
-        self.__range_display_mode_timecode_action = QtWidgets.QAction("Timecode", action_group)
+        self.__range_display_mode_timecode_action = QAction("Timecode", action_group)
         self.__range_display_mode_timecode_action.setCheckable(True)
-        self.__range_display_mode_feet_action = QtWidgets.QAction("Feet", action_group)
+        self.__range_display_mode_feet_action = QAction("Feet", action_group)
         self.__range_display_mode_feet_action.setCheckable(True)
         action_group.setExclusive(True)
         action_group.triggered.connect(self.__range_display_mode_selected)

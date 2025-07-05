@@ -1,8 +1,13 @@
 import os
-from PySide2 import QtCore, QtWidgets
+try:
+    from PySide2 import QtCore, QtWidgets
+    from PySide2.QtWidgets import QAction
+except ImportError:
+    from PySide6 import QtCore, QtWidgets
+    from PySide6.QtGui import QAction
 
 
-class ActionWithObj(QtWidgets.QAction):
+class ActionWithObj(QAction):
     """Action that holds given object in it's SIG_TRIGGERED signal"""
     SIG_TRIGGERED = QtCore.Signal(object)
     def __init__(self, text, obj, parent=None):
@@ -38,13 +43,13 @@ class ContextMenu(QtWidgets.QMenu):
         self.__index = self.__mindex.row()
         self.clear()
 
-        create = QtWidgets.QAction("Create", self)
-        duplicate = QtWidgets.QAction("Duplicate", self)
-        cut = QtWidgets.QAction("Cut", self)
-        copy = QtWidgets.QAction("Copy", self)
-        paste = QtWidgets.QAction("Paste", self)
-        rename = QtWidgets.QAction("Rename", self)
-        delete = QtWidgets.QAction("Delete", self)
+        create = QAction("Create", self)
+        duplicate = QAction("Duplicate", self)
+        cut = QAction("Cut", self)
+        copy = QAction("Copy", self)
+        paste = QAction("Paste", self)
+        rename = QAction("Rename", self)
+        delete = QAction("Delete", self)
 
         create.triggered.connect(self.SIG_CREATE)
         duplicate.triggered.connect(self.SIG_DUPLICATE)
@@ -61,7 +66,7 @@ class ContextMenu(QtWidgets.QMenu):
         ids = [] if ids is None else ids
         names = [self.__session_api.get_playlist_name(id) for id in ids]
         for id, name in zip(ids, names):
-            action = QtWidgets.QAction(name, self.__restore_menu)
+            action = QAction(name, self.__restore_menu)
             action.setData(id)
             action.triggered.connect(self.__remove_from_recover_menu)
             self.__restore_menu.addAction(action)

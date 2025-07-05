@@ -1,5 +1,10 @@
 import os
-from PySide2 import QtCore, QtWidgets
+try:
+    from PySide2 import QtCore, QtWidgets
+    from PySide2.QtWidgets import QAction
+except ImportError:
+    from PySide6 import QtCore, QtWidgets
+    from PySide6.QtGui import QAction
 from rpa.widgets.session_io import constants as C
 from rpa.widgets.session_io.session_io_dialog import SessionIODialog
 from rpa.widgets.session_io.otio_reader import OTIOReader
@@ -40,15 +45,15 @@ class SessionIO(QtCore.QObject):
                 self.save_session_action]
 
     def __init_actions(self):
-        self.append_session_action = QtWidgets.QAction("Append Session")
+        self.append_session_action = QAction("Append Session")
         self.append_session_action.setStatusTip(
             "Append a session file to the current session")
 
-        self.replace_session_action = QtWidgets.QAction("Replace Session")
+        self.replace_session_action = QAction("Replace Session")
         self.replace_session_action.setStatusTip(
             "Replace the current session with a session file")
 
-        self.save_session_action = QtWidgets.QAction("Save Session")
+        self.save_session_action = QAction("Save Session")
         self.save_session_action.setStatusTip(
             "Save the current session to a file")
 

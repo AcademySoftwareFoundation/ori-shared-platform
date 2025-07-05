@@ -1,4 +1,7 @@
-from PySide2 import QtCore, QtWidgets
+try:
+    from PySide2 import QtCore, QtWidgets
+except ImportError:
+    from PySide6 import QtCore, QtWidgets
 from rpa.widgets.color_corrector.view.clearing_slider_label import ClearingSliderLabel
 from rpa.widgets.color_corrector.view.slider import Slider
 

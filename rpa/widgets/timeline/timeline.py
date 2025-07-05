@@ -1,5 +1,8 @@
 import json
-from PySide2 import QtCore, QtWidgets, QtGui
+try:
+    from PySide2 import QtCore, QtWidgets, QtGui
+except ImportError:
+    from PySide6 import QtCore, QtWidgets, QtGui
 from rpa.widgets.timeline.view.range import TimelineRange
 from rpa.widgets.timeline.view.actions import Actions
 from rpa.widgets.timeline.view.slider import TimelineSlider

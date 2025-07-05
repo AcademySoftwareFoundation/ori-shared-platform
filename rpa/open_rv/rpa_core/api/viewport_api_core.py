@@ -5,7 +5,10 @@ from dataclasses import dataclass
 import imageio.v3 as iio
 import numpy as np
 from OpenGL import GL
-from PySide2 import QtGui, QtCore
+try:
+    from PySide2 import QtGui, QtCore
+except ImportError:
+    from PySide6 import QtGui, QtCore
 from rv import commands as rvc
 from rv import extra_commands as rve
 from rv import runtime

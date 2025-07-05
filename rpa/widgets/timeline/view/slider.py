@@ -1,7 +1,12 @@
 import math
 import bisect
 import six
-from PySide2 import QtCore, QtGui, QtWidgets
+try:
+    from PySide2 import QtCore, QtGui, QtWidgets
+    from PySide2.QtWidgets import QAction
+except ImportError:
+    from PySide6 import QtCore, QtGui, QtWidgets
+    from PySide6.QtGui import QAction
 
 
 class TimelineSlider(QtWidgets.QWidget):
@@ -162,10 +167,10 @@ class TimelineSlider(QtWidgets.QWidget):
         self.__dark_green_brush = QtGui.QBrush(QtGui.QColor(0, 128, 0))
         self.__background_brush = QtGui.QBrush(QtGui.QColor(75, 75, 75))
 
-        self.__slider_scope_ag = action_group = QtWidgets.QActionGroup(self)
-        self.__slider_scope_seq_action = QtWidgets.QAction("Sequence", action_group)
+        self.__slider_scope_ag = action_group = QActionGroup(self)
+        self.__slider_scope_seq_action = QAction("Sequence", action_group)
         self.__slider_scope_seq_action.setCheckable(True)
-        self.__slider_scope_clip_action = QtWidgets.QAction("Clip", action_group)
+        self.__slider_scope_clip_action = QAction("Clip", action_group)
         self.__slider_scope_clip_action.setCheckable(True)
         action_group.setExclusive(True)
         action_group.triggered.connect(self.__slider_scope_selected)

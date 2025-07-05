@@ -1,4 +1,7 @@
-from PySide2 import QtCore, QtWidgets
+try:
+    from PySide2 import QtCore, QtWidgets
+except ImportError:
+    from PySide6 import QtCore, QtWidgets
 from rpa.widgets.sub_widgets.color_circle import ColorCircle
 from rpa.widgets.color_corrector.view.color_sliders import ColorSliders
 

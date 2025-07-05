@@ -1,7 +1,13 @@
-from PySide2 import QtCore
+try:
+    from PySide2 import QtCore
+except ImportError:
+    from PySide6 import QtCore
 from rv import rvtypes
 from rpa.open_rv.rpa_core.rpa_core import RpaCore
-from PySide2 import QtCore, QtWidgets
+try:
+    from PySide2 import QtCore, QtWidgets
+except ImportError:
+    from PySide6 import QtCore, QtWidgets
 
 
 class RpaCoreMode(QtCore.QObject, rvtypes.MinorMode):

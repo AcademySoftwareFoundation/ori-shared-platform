@@ -1,7 +1,10 @@
 import json
 from typing import Union
 
-from PySide2 import QtCore, QtGui
+try:
+    from PySide2 import QtCore, QtGui
+except ImportError:
+    from PySide6 import QtCore, QtGui
 import rpa.widgets.session_manager.clips_controller.view.resources.resources
 from rpa.widgets.session_manager.clips_controller.view.thumbnail_loader import ThumbnailLoader
 

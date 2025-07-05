@@ -1,8 +1,14 @@
 import time
 
-from PySide2.QtCore import QObject, QUrl, QByteArray, Qt
-from PySide2.QtNetwork import QNetworkAccessManager, QNetworkRequest
-from PySide2.QtGui import QImage, QPixmap, QColor
+
+try:
+    from PySide2.QtCore import QObject, QUrl, QByteArray, Qt
+    from PySide2.QtNetwork import QNetworkAccessManager, QNetworkRequest
+    from PySide2.QtGui import QImage, QPixmap, QColor
+except ImportError:
+    from PySide6.QtCore import QObject, QUrl, QByteArray, Qt
+    from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest
+    from PySide6.QtGui import QImage, QPixmap, QColor
 
 class ThumbnailLoader(QObject):
     def __init__(self):

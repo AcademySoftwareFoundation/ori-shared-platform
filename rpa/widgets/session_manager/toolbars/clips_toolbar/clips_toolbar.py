@@ -1,6 +1,11 @@
 from typing import List, Union
 
-from PySide2 import QtCore, QtGui, QtWidgets
+try:
+    from PySide2 import QtCore, QtGui, QtWidgets
+    from PySide2.QtWidgets import QAction
+except ImportError:
+    from PySide6 import QtCore, QtGui, QtWidgets
+    from PySide6.QtGui import QAction
 from rpa.widgets.session_manager.toolbars.icons import icons
 
 
@@ -28,32 +33,32 @@ class ClipsToolbar(QtWidgets.QToolBar):
         self.addWidget(label)
         self.addSeparator()
 
-        self.__create = QtWidgets.QAction(
+        self.__create = QAction(
             make_icon(":plus28.png"), "Create clips", self)
         self.__create.triggered.connect(self.SIG_CREATE)
         self.addAction(self.__create)
 
-        delete_permanently = QtWidgets.QAction(
+        delete_permanently = QAction(
             make_icon(":minus28.png"), "Delete selected clips", self)
         delete_permanently.triggered.connect(self.SIG_DELETE_PERMANENTLY)
         self.addAction(delete_permanently)
 
-        move_top = QtWidgets.QAction(
+        move_top = QAction(
             make_icon(":topArrow28.png"), "Move selected clips top", self)
         move_top.triggered.connect(self.SIG_MOVE_TOP)
         self.addAction(move_top)
 
-        move_up = QtWidgets.QAction(
+        move_up = QAction(
             make_icon(":upArrow28.png"), "Move selected clips up", self)
         move_up.triggered.connect(self.SIG_MOVE_UP)
         self.addAction(move_up)
 
-        move_down = QtWidgets.QAction(
+        move_down = QAction(
             make_icon(":downArrow28.png"), "Move selected clips down", self)
         move_down.triggered.connect(self.SIG_MOVE_DOWN)
         self.addAction(move_down)
 
-        move_bottom = QtWidgets.QAction(make_icon(":bottomArrow28.png"),
+        move_bottom = QAction(make_icon(":bottomArrow28.png"),
             "Move selected clips to bottom", self)
         move_bottom.triggered.connect(self.SIG_MOVE_BOTTOM)
         self.addAction(move_bottom)
@@ -61,10 +66,10 @@ class ClipsToolbar(QtWidgets.QToolBar):
         self.addSeparator()
         self.addSeparator()
 
-    def inject_create_btn(self, action: QtWidgets.QAction):
+    def inject_create_btn(self, action: QAction):
         self.insertAction(self.__create, action)
         self.__create.setVisible(False)
 
-    def inject_button(self, actions: List[Union[QtWidgets.QWidget, QtWidgets.QAction]]):
+    def inject_button(self, actions: List[Union[QtWidgets.QWidget, QAction]]):
         for action in actions:
             self.addAction(action)

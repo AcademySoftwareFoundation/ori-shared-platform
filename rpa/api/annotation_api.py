@@ -12,7 +12,10 @@ A Frame of a clip can have multiple Read-Write Annotations and it can
 have only 1 Read-Only Annotation.
 """
 
-from PySide2 import QtCore
+try:
+    from PySide2 import QtCore
+except ImportError:
+    from PySide6 import QtCore
 from rpa.delegate_mngr import DelegateMngr
 from rpa.session_state.annotations import \
     StrokePoint, Stroke, Text, Annotation

@@ -1,4 +1,9 @@
-from PySide2 import QtCore, QtGui, QtWidgets
+try:
+    from PySide2 import QtCore, QtGui, QtWidgets
+    from PySide2.QtWidgets import QAction
+except ImportError:
+    from PySide6 import QtCore, QtGui, QtWidgets
+    from PySide6.QtGui import QAction
 from rpa.widgets.timeline.view import svg
 
 
@@ -19,17 +24,17 @@ class Actions(QtCore.QObject):
 
         self.__create_icons()
 
-        self.step_forward_action = QtWidgets.QAction("Step Forward")
+        self.step_forward_action = QAction("Step Forward")
         self.step_forward_action.setShortcut(QtGui.QKeySequence("Right"))
         self.step_forward_action.setIcon(self.__step_forward_icon)
         self.step_forward_action.triggered.connect(self.SIG_STEP_FORWARDS_TRIGGERED.emit)
 
-        self.step_backward_action = QtWidgets.QAction("Step Backward")
+        self.step_backward_action = QAction("Step Backward")
         self.step_backward_action.setShortcut(QtGui.QKeySequence("Left"))
         self.step_backward_action.setIcon(self.__step_backward_icon)
         self.step_backward_action.triggered.connect(self.SIG_STEP_BACKWARDS_TRIGGERED.emit)
 
-        self.toggle_play_action = QtWidgets.QAction("Play", self.__main_window)
+        self.toggle_play_action = QAction("Play", self.__main_window)
         self.toggle_play_action.setShortcut(QtGui.QKeySequence("Space"))
         self.toggle_play_action.setCheckable(True)
         self.toggle_play_action.setChecked(False)
@@ -37,7 +42,7 @@ class Actions(QtCore.QObject):
             lambda state: self.SIG_PLAY_TOGGLED.emit(state)
         )
 
-        self.toggle_play_forward_action = QtWidgets.QAction("Play Forward")
+        self.toggle_play_forward_action = QAction("Play Forward")
         self.toggle_play_forward_action.setShortcut(QtGui.QKeySequence("Up"))
         self.toggle_play_forward_action.setCheckable(True)
         self.toggle_play_forward_action.setChecked(False)
@@ -45,7 +50,7 @@ class Actions(QtCore.QObject):
             lambda state: self.SIG_PLAY_FORWARDS_TOGGLED.emit(state)
         )
 
-        self.toggle_play_backward_action = QtWidgets.QAction("Play Backward")
+        self.toggle_play_backward_action = QAction("Play Backward")
         self.toggle_play_backward_action.setShortcut(QtGui.QKeySequence("Down"))
         self.toggle_play_backward_action.setCheckable(True)
         self.toggle_play_backward_action.setChecked(False)
@@ -61,7 +66,7 @@ class Actions(QtCore.QObject):
 
         self.volume_menu = QtWidgets.QMenu()
 
-        self.toggle_mute_action = QtWidgets.QAction("Mute")
+        self.toggle_mute_action = QAction("Mute")
         self.toggle_mute_action.setShortcut(QtGui.QKeySequence("M"))
         self.toggle_mute_action.setCheckable(True)
         self.toggle_mute_action.triggered.connect(
@@ -86,7 +91,7 @@ class Actions(QtCore.QObject):
         self.volume_menu.addAction(self.mute_action)
 
         self.toggle_audio_scrubbing_action = \
-            QtWidgets.QAction("Audio Scrubbing")
+            QAction("Audio Scrubbing")
         self.toggle_audio_scrubbing_action.setShortcut(
             QtGui.QKeySequence("Ctrl+Shift+R"))
         self.toggle_audio_scrubbing_action.setCheckable(True)
@@ -95,14 +100,14 @@ class Actions(QtCore.QObject):
         )
 
         # Playback Modes
-        self.playback_repeat_action = QtWidgets.QAction("Playback Repeat", checkable=True)
+        self.playback_repeat_action = QAction("Playback Repeat", checkable=True)
         self.playback_repeat_action.triggered.connect(self.set_playback_mode)
         self.playback_repeat_action.setChecked(True) # Default
-        self.playback_once_action = QtWidgets.QAction("Playback Once", checkable=True)
+        self.playback_once_action = QAction("Playback Once", checkable=True)
         self.playback_once_action.triggered.connect(self.set_playback_mode)
-        self.playback_swing_action = QtWidgets.QAction("Playback Swing", checkable=True)
+        self.playback_swing_action = QAction("Playback Swing", checkable=True)
         self.playback_swing_action.triggered.connect(self.set_playback_mode)
-        playback_mode_ag = QtWidgets.QActionGroup(self)
+        playback_mode_ag = QActionGroup(self)
         playback_mode_ag.addAction(self.playback_repeat_action)
         playback_mode_ag.addAction(self.playback_once_action)
         playback_mode_ag.addAction(self.playback_swing_action)

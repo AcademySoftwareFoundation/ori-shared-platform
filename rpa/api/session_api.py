@@ -8,7 +8,10 @@ The Session API works with Ids to manipulate respective Playlists, Clips and
 Attrs.
 """
 
-from PySide2 import QtCore
+try:
+    from PySide2 import QtCore
+except ImportError:
+    from PySide6 import QtCore
 from typing import List, Optional, Tuple, Union, Any
 from rpa.delegate_mngr import DelegateMngr
 import uuid

@@ -1,7 +1,10 @@
 import math
 import time
 from collections import deque
-from PySide2 import QtCore
+try:
+    from PySide2 import QtCore
+except ImportError:
+    from PySide6 import QtCore
 from OpenGL import GL
 
 from rv import commands as rvc

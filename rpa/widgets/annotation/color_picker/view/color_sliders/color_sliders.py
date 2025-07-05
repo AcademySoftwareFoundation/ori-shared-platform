@@ -1,4 +1,7 @@
-from PySide2 import QtCore, QtGui, QtWidgets
+try:
+    from PySide2 import QtCore, QtGui, QtWidgets
+except ImportError:
+    from PySide6 import QtCore, QtGui, QtWidgets
 from rpa.widgets.annotation.color_picker.view import qcolor
 from rpa.widgets.annotation.color_picker.view.color_sliders.color_slider import ColorSlider
 from rpa.widgets.annotation.color_picker.view.color_sliders.clearing_slider_label import ClearingSliderLabel

@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 
@@ -79,8 +79,8 @@ class RangeScope:
 
 @dataclass
 class TimelineScope:
-    slider: SliderScope = SliderScope()
-    range: RangeScope = RangeScope()
+    slider: SliderScope = field(default_factory=SliderScope)
+    range: RangeScope = field(default_factory=RangeScope)
 
     def __getstate__(self):
         return {

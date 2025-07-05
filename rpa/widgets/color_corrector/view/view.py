@@ -2,7 +2,10 @@
 View for Color Corrector
 """
 
-from PySide2 import QtCore, QtWidgets
+try:
+    from PySide2 import QtCore, QtWidgets
+except ImportError:
+    from PySide6 import QtCore, QtWidgets
 from rpa.widgets.sub_widgets.mini_label_button import MiniLabelButton
 from rpa.widgets.color_corrector.view.tab_widget import ColorCorrectorTabWidget
 from rpa.widgets.color_corrector.utils import Slider

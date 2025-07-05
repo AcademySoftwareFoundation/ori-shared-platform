@@ -1,5 +1,8 @@
 import math
-from PySide2 import QtCore, QtGui, QtWidgets
+try:
+    from PySide2 import QtCore, QtGui, QtWidgets
+except ImportError:
+    from PySide6 import QtCore, QtGui, QtWidgets
 from rpa.widgets.sub_widgets import input_line_edit
 from rpa.widgets.sub_widgets.slider_widget import SliderWidget
 from rpa.widgets.color_corrector.utils import FormatNumber

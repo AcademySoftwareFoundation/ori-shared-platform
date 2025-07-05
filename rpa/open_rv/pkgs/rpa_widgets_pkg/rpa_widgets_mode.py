@@ -1,5 +1,8 @@
 import os
-from PySide2 import QtCore, QtWidgets
+try:
+    from PySide2 import QtCore, QtWidgets
+except ImportError:
+    from PySide6 import QtCore, QtWidgets
 from rv import rvtypes
 import rv.qtutils
 import platform

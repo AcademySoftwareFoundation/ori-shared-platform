@@ -3,7 +3,10 @@ from OpenGL.GL import shaders as glShaders
 from OpenGL import GL
 from rv import commands as rvc
 from rv import extra_commands as rve
-from PySide2 import QtCore
+try:
+    from PySide2 import QtCore
+except ImportError:
+    from PySide6 import QtCore
 from rpa.open_rv.rpa_core.api.utils import itview_to_rv
 from rpa.session_state.color_corrections import ColorTimer, Grade
 import struct

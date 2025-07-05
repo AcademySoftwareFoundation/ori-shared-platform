@@ -1,4 +1,8 @@
-from PySide2 import QtWidgets, QtGui, QtCore
+try:
+    from PySide2 import QtWidgets, QtGui, QtCore
+except ImportError:
+    from PySide6 import QtWidgets, QtGui, QtCore
+
 from rpa.widgets.sub_widgets.striped_frame import StripedFrame
 from rpa.widgets.sub_widgets import mini_label_button
 

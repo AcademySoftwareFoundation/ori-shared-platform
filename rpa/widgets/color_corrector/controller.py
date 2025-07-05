@@ -2,7 +2,10 @@
 Controller for Color Corrector
 """
 import numpy as np
-from PySide2 import QtCore, QtWidgets
+try:
+    from PySide2 import QtCore, QtWidgets
+except ImportError:
+    from PySide6 import QtCore, QtWidgets
 
 from rpa.session_state.utils import screen_to_itview
 from rpa.session_state.color_corrections import ColorTimer, Grade

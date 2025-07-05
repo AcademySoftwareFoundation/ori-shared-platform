@@ -1,4 +1,7 @@
-from PySide2 import QtCore
+try:
+    from PySide2 import QtCore
+except ImportError:
+    from PySide6 import QtCore
 from rv import runtime
 from rv import extra_commands as rve
 from rv import commands as rvc

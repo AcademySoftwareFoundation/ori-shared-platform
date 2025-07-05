@@ -1,4 +1,7 @@
-from PySide2 import QtCore, QtGui, QtWidgets
+try:
+    from PySide2 import QtCore, QtGui, QtWidgets
+except ImportError:
+    from PySide6 import QtCore, QtGui, QtWidgets
 from rpa.widgets.session_manager.playlists_controller.view.item_delegate \
     import ItemDelegate
 from rpa.widgets.session_manager.playlists_controller.view.style \

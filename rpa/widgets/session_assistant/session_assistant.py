@@ -1,5 +1,10 @@
 from typing import List
-from PySide2 import QtCore, QtWidgets
+try:
+    from PySide2 import QtCore, QtWidgets
+    from PySide2.QtWidgets import QAction
+except ImportError:
+    from PySide6 import QtCore, QtWidgets
+    from PySide6.QtGui import QAction
 
 
 class SessionAssistant(QtCore.QObject):
@@ -14,15 +19,15 @@ class SessionAssistant(QtCore.QObject):
         self.__connect_signals()
 
     def __init_actions(self):
-        self.prev_playlist_action = QtWidgets.QAction("Prev Playlist")
-        self.next_playlist_action = QtWidgets.QAction("Next Playlist")
-        self.prev_clip_action = QtWidgets.QAction("Prev Clip")
-        self.next_clip_action = QtWidgets.QAction("Next Clip")
+        self.prev_playlist_action = QAction("Prev Playlist")
+        self.next_playlist_action = QAction("Next Playlist")
+        self.prev_clip_action = QAction("Prev Clip")
+        self.next_clip_action = QAction("Next Clip")
 
         self.key_in_to_current_frame_action = \
-            QtWidgets.QAction("Key In to Current Frame")
+            QAction("Key In to Current Frame")
         self.key_out_to_current_frame_action = \
-            QtWidgets.QAction("Key Out to Current Frame")
+            QAction("Key Out to Current Frame")
 
         self.__actions = [self.prev_playlist_action,
                           self.next_playlist_action,

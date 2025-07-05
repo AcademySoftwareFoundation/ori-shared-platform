@@ -3,7 +3,10 @@ Model for Color Picker
 """
 
 from collections import deque
-from PySide2 import QtGui
+try:
+    from PySide2 import QtGui
+except ImportError:
+    from PySide6 import QtGui
 
 
 class Rgb(object):

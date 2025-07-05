@@ -9,7 +9,10 @@ current timeline sequence and vice versa.
 """
 
 from typing import List, Optional, Tuple
-from PySide2 import QtCore
+try:
+    from PySide2 import QtCore
+except ImportError:
+    from PySide6 import QtCore
 from rpa.delegate_mngr import DelegateMngr
 
 

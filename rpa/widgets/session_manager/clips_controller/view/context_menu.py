@@ -1,4 +1,9 @@
-from PySide2 import QtCore, QtGui, QtWidgets
+try:
+    from PySide2 import QtCore, QtGui, QtWidgets
+    from PySide2.QtWidgets import QAction
+except ImportError:
+    from PySide6 import QtCore, QtGui, QtWidgets
+    from PySide6.QtGui import QAction
 
 
 class ContextMenu(QtWidgets.QMenu):
@@ -22,19 +27,19 @@ class ContextMenu(QtWidgets.QMenu):
         self.__index = index
 
         self.clear()
-        cut = QtWidgets.QAction("Cut", self)
+        cut = QAction("Cut", self)
         cut.setShortcut("Ctrl+X")
-        copy = QtWidgets.QAction("Copy", self)
+        copy = QAction("Copy", self)
         copy.setShortcut("Ctrl+C")
-        paste = QtWidgets.QAction("Paste", self)
+        paste = QAction("Paste", self)
         paste.setShortcut("Ctrl+V")
-        delete_permanently = QtWidgets.QAction("Delete Permanently", self)
+        delete_permanently = QAction("Delete Permanently", self)
         delete_permanently.setShortcut("Delete")
 
-        move_top = QtWidgets.QAction("Move to top", self)
-        move_up = QtWidgets.QAction("Move up", self)
-        move_down = QtWidgets.QAction("Move down", self)
-        move_bottom = QtWidgets.QAction("Move to bottom", self)
+        move_top = QAction("Move to top", self)
+        move_up = QAction("Move up", self)
+        move_down = QAction("Move down", self)
+        move_bottom = QAction("Move to bottom", self)
 
         # SIGNALS
         cut.triggered.connect(self.SIG_CUT)

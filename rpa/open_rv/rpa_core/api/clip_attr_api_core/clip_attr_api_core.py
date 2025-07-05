@@ -1,5 +1,8 @@
 from typing import List
-from PySide2 import QtCore
+try:
+    from PySide2 import QtCore
+except ImportError:
+    from PySide6 import QtCore
 
 
 class ClipAttrApiCore(QtCore.QObject):

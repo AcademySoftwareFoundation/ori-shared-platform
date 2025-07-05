@@ -1,5 +1,8 @@
 from rpa.session_state.session import Session
-from PySide2 import QtCore
+try:
+    from PySide2 import QtCore
+except ImportError:
+    from PySide6 import QtCore
 from rv import commands, runtime, extra_commands
 from typing import List, Any
 from rpa.open_rv.rpa_core.api import prop_util

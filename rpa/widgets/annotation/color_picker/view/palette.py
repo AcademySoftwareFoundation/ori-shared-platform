@@ -1,4 +1,9 @@
-from PySide2 import QtCore, QtGui, QtWidgets
+try:
+    from PySide2 import QtCore, QtGui, QtWidgets
+    from PySide2.QtWidgets import QAction
+except ImportError:
+    from PySide6 import QtCore, QtGui, QtWidgets
+    from PySide6.QtGui import QAction
 from rpa.widgets.annotation.color_picker.view import qcolor
 from rpa.widgets.annotation.color_picker.model import Rgb
 import rpa.widgets.annotation.color_picker.view.resources.resources
@@ -260,7 +265,7 @@ class RecentPalette(QtWidgets.QWidget):
             tile.set_color(*colors[index].get())
 
 
-class FavColorAction(QtWidgets.QAction):
+class FavColorAction(QAction):
     SIG_TRIGGERED = QtCore.Signal(int)
 
     def __init__(self, index, parent):
@@ -335,7 +340,7 @@ class CustomPalette(QtWidgets.QWidget):
             menu.addAction(action)
             action.SIG_TRIGGERED.connect(self.SIG_SET_FAV_COLOR)
 
-        clear_all = QtWidgets.QAction('Clear all', self)
+        clear_all = QAction('Clear all', self)
         clear_all.triggered.connect(self.__emit_clear_fav_colors)
         menu.addAction(clear_all)
         button.setPopupMode(QtWidgets.QToolButton.InstantPopup)

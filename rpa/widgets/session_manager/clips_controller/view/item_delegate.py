@@ -1,4 +1,7 @@
-from PySide2 import QtCore, QtWidgets, QtGui
+try:
+    from PySide2 import QtCore, QtWidgets, QtGui
+except ImportError:
+    from PySide6 import QtCore, QtWidgets, QtGui
 
 
 class ItemDelegate(QtWidgets.QStyledItemDelegate):

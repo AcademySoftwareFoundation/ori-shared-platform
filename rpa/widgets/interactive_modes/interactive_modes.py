@@ -1,4 +1,9 @@
-from PySide2 import QtCore, QtGui, QtWidgets
+try:
+    from PySide2 import QtCore, QtGui, QtWidgets
+    from PySide2.QtWidgets import QAction
+except ImportError:
+    from PySide6 import QtCore, QtGui, QtWidgets
+    from PySide6.QtGui import QAction
 
 from rpa.widgets.interactive_modes import constants as C
 import rpa.widgets.interactive_modes.resources.resources
@@ -20,28 +25,28 @@ class InteractiveModes(QtCore.QObject):
         def set_interactive_mode(mode):
             self.__session_api.set_custom_session_attr(C.INTERACTIVE_MODE, mode)
 
-        self.__rectangle_mode = QtWidgets.QAction("Rectangle")
+        self.__rectangle_mode = QAction("Rectangle")
         self.__rectangle_mode.setCheckable(True)
         self.__rectangle_mode.setIcon(
             QtGui.QIcon(QtGui.QPixmap(":rectangle.png")))
         self.__rectangle_mode.toggled.connect(
             lambda is_checked: set_interactive_mode(C.INTERACTIVE_MODE_RECTANGLE if is_checked else None))
 
-        self.__ellipse_mode = QtWidgets.QAction("Ellipse")
+        self.__ellipse_mode = QAction("Ellipse")
         self.__ellipse_mode.setCheckable(True)
         self.__ellipse_mode.setIcon(
             QtGui.QIcon(QtGui.QPixmap(":ellipse.png")))
         self.__ellipse_mode.toggled.connect(
             lambda is_checked: set_interactive_mode(C.INTERACTIVE_MODE_ELLIPSE if is_checked else None))
 
-        self.__lasso_mode = QtWidgets.QAction("Lasso")
+        self.__lasso_mode = QAction("Lasso")
         self.__lasso_mode.setCheckable(True)
         self.__lasso_mode.setIcon(
             QtGui.QIcon(QtGui.QPixmap(":lasso.png")))
         self.__lasso_mode.toggled.connect(
             lambda is_checked: set_interactive_mode(C.INTERACTIVE_MODE_LASSO if is_checked else None))
 
-        self.__pen_mode = QtWidgets.QAction("Pen")
+        self.__pen_mode = QAction("Pen")
         self.__pen_mode.setCheckable(True)
         self.__pen_mode.setIcon(
             QtGui.QIcon(QtGui.QPixmap.fromImage(QtGui.QImage.fromData(
@@ -50,7 +55,7 @@ class InteractiveModes(QtCore.QObject):
         self.__pen_mode.toggled.connect(
             lambda is_checked: set_interactive_mode(C.INTERACTIVE_MODE_PEN if is_checked else None))
 
-        self.__line_mode = QtWidgets.QAction("Line")
+        self.__line_mode = QAction("Line")
         self.__line_mode.setCheckable(True)
         self.__line_mode.setIcon(
                 QtGui.QIcon(QtGui.QPixmap(":line.png")))
@@ -58,7 +63,7 @@ class InteractiveModes(QtCore.QObject):
         self.__line_mode.toggled.connect(
             lambda is_checked: set_interactive_mode(C.INTERACTIVE_MODE_LINE if is_checked else None))
 
-        self.__multi_line_mode = QtWidgets.QAction("Multi Line")
+        self.__multi_line_mode = QAction("Multi Line")
         self.__multi_line_mode.setCheckable(True)
         self.__multi_line_mode.setIcon(
                 QtGui.QIcon(QtGui.QPixmap(":multiline.png")))
@@ -66,7 +71,7 @@ class InteractiveModes(QtCore.QObject):
         self.__multi_line_mode.toggled.connect(
             lambda is_checked: set_interactive_mode(C.INTERACTIVE_MODE_MULTI_LINE if is_checked else None))
 
-        self.__airbrush_mode = QtWidgets.QAction("Airbrush")
+        self.__airbrush_mode = QAction("Airbrush")
         self.__airbrush_mode.setCheckable(True)
         self.__airbrush_mode.setIcon(
             QtGui.QIcon(QtGui.QPixmap.fromImage(QtGui.QImage.fromData(
@@ -74,7 +79,7 @@ class InteractiveModes(QtCore.QObject):
         self.__airbrush_mode.toggled.connect(
             lambda is_checked: set_interactive_mode(C.INTERACTIVE_MODE_AIRBRUSH if is_checked else None))
 
-        self.__text_mode = QtWidgets.QAction("Text")
+        self.__text_mode = QAction("Text")
         self.__text_mode.setCheckable(True)
         self.__text_mode.setIcon(
             QtGui.QIcon(QtGui.QPixmap.fromImage(QtGui.QImage.fromData(
@@ -82,7 +87,7 @@ class InteractiveModes(QtCore.QObject):
         self.__text_mode.toggled.connect(
             lambda is_checked: set_interactive_mode(C.INTERACTIVE_MODE_TEXT if is_checked else None))
 
-        self.__hard_eraser_mode = QtWidgets.QAction("Hard Eraser")
+        self.__hard_eraser_mode = QAction("Hard Eraser")
         self.__hard_eraser_mode.setCheckable(True)
         self.__hard_eraser_mode.setIcon(
             QtGui.QIcon(QtGui.QPixmap.fromImage(QtGui.QImage.fromData(
@@ -91,7 +96,7 @@ class InteractiveModes(QtCore.QObject):
         self.__hard_eraser_mode.toggled.connect(
             lambda is_checked: set_interactive_mode(C.INTERACTIVE_MODE_HARD_ERASER if is_checked else None))
 
-        self.__soft_eraser_mode = QtWidgets.QAction("Soft Eraser")
+        self.__soft_eraser_mode = QAction("Soft Eraser")
         self.__soft_eraser_mode.setCheckable(True)
         self.__soft_eraser_mode.setIcon(
             QtGui.QIcon(QtGui.QPixmap.fromImage(QtGui.QImage.fromData(
@@ -99,7 +104,7 @@ class InteractiveModes(QtCore.QObject):
         self.__soft_eraser_mode.toggled.connect(
             lambda is_checked: set_interactive_mode(C.INTERACTIVE_MODE_SOFT_ERASER if is_checked else None))
 
-        self.__move_mode = QtWidgets.QAction("Move Annotations")
+        self.__move_mode = QAction("Move Annotations")
         self.__move_mode.setCheckable(True)
         self.__move_mode.setIcon(
                 QtGui.QIcon(QtGui.QPixmap(":hand.png")))
@@ -107,7 +112,7 @@ class InteractiveModes(QtCore.QObject):
         self.__move_mode.toggled.connect(
             lambda is_checked: set_interactive_mode(C.INTERACTIVE_MODE_MOVE if is_checked else None))
 
-        self.__transform_mode = QtWidgets.QAction("Transform Mode")
+        self.__transform_mode = QAction("Transform Mode")
         self.__transform_mode.setCheckable(True)
         self.__transform_mode.setIcon(
                 QtGui.QIcon(QtGui.QPixmap(":transforms.png")))
@@ -115,7 +120,7 @@ class InteractiveModes(QtCore.QObject):
         self.__transform_mode.toggled.connect(
             lambda is_checked: set_interactive_mode(C.INTERACTIVE_MODE_TRANSFORM if is_checked else None))
 
-        self.__dynamic_transform_mode = QtWidgets.QAction("Dynamic Transform Mode")
+        self.__dynamic_transform_mode = QAction("Dynamic Transform Mode")
         self.__dynamic_transform_mode.setCheckable(True)
         self.__dynamic_transform_mode.setIcon(
                 QtGui.QIcon(QtGui.QPixmap(":transforms_dynamic.png")))
