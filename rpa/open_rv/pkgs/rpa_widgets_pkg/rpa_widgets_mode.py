@@ -72,7 +72,7 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
         self.__test_annotation_api_dock = None
         self.__test_color_api_dock = None
         self.__test_delegate_manager_dock = None
-
+        print("+++++++++ YES")
         self.init("RpaMode", None, None,
             menu=[("Rpa", [
                 ("Rpa Interpreter", self.__show_rpa_interpreter, "shift+ctrl+1", None),
@@ -85,14 +85,14 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
                 ("Color Corrector", self.__show_color_corrector, "shift+7", None),
                 ("Background Modes", self.__show_background_modes, "shift+ctrl+8", None),
                 ("Media Path Overlay", self.__show_media_path_overlay, None, None),
-                ("RPA Tests", [
-                    ("Session Api", self.__show_test_session_api, None, None),
-                    ("Timeline Api", self.__show_test_timeline_api, None, None),
-                    ("Viewport Api", self.__show_test_viewport_api, None, None),
-                    ("Annotation Api", self.__show_test_annotation_api, None, None),
-                    ("Color Api", self.__show_test_color_api, None, None),
-                    ("Delegate Manager", self.__show_test_delegate_manager, None, None)
-                ])
+                # ("RPA Tests", [
+                #     ("Session Api", self.__show_test_session_api, None, None),
+                #     ("Timeline Api", self.__show_test_timeline_api, None, None),
+                #     ("Viewport Api", self.__show_test_viewport_api, None, None),
+                #     ("Annotation Api", self.__show_test_annotation_api, None, None),
+                #     ("Color Api", self.__show_test_color_api, None, None),
+                #     ("Delegate Manager", self.__show_test_delegate_manager, None, None)
+                # ])
             ])])
 
     def __show_session_manager(self, event):

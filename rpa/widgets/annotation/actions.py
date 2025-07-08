@@ -1,9 +1,9 @@
 try:
-    from PySide2 import QtGui, QtCore, QtWidgets
-    from PySide2.QtWidgets import QAction
+    from PySide2 import QtGui, QtCore
+    from PySide2.QtWidgets import QAction, QActionGroup
 except ImportError:
-    from PySide6 import QtGui, QtCore, QtWidgets
-    from PySide6.QtGui import QAction
+    from PySide6 import QtGui, QtCore
+    from PySide6.QtGui import QAction, QActionGroup
 from rpa.widgets.annotation import svg
 from rpa.widgets.annotation import constants as C
 import rpa.widgets.annotation.resources.resources

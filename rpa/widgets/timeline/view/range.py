@@ -1,9 +1,9 @@
 try:
     from PySide2 import QtCore, QtGui, QtWidgets
-    from PySide2.QtWidgets import QAction
+    from PySide2.QtWidgets import QAction, QActionGroup
 except ImportError:
     from PySide6 import QtCore, QtGui, QtWidgets
-    from PySide6.QtGui import QAction
+    from PySide6.QtGui import QAction, QActionGroup
 from rpa.widgets.timeline.view.line_edit import TimelineLineEdit
 
 

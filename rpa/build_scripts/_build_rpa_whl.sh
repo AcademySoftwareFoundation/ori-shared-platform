@@ -6,7 +6,7 @@ INCLUDE_DIRS=("api" "open_rv/rpa_core" "session_state" "utils" "widgets")
 PACKAGE_NAME="rpa"
 
 TMPDIR=$(mktemp -d)
-cp "$PROJ_DIR/setup.py" "$PROJ_DIR/pyproject.toml" "$TMPDIR/"
+cp "$PROJ_DIR/build_scripts/setup.py" "$PROJ_DIR/build_scripts/pyproject.toml" "$TMPDIR/"
 
 PKGDIR="$TMPDIR/$PACKAGE_NAME"
 mkdir -p "$PKGDIR"
@@ -30,7 +30,7 @@ python3 setup.py bdist_wheel
 # Move built wheel back to original working directory
 WHEEL_FILE=$(find dist -name "*.whl")
 if [ -n "$WHEEL_FILE" ]; then
-    mv "$WHEEL_FILE" "$PROJ_DIR/build_scripts/pkgs/"
+    mv "$WHEEL_FILE" "$PROJ_DIR/build_scripts/output/"
     echo "✅ Wheel built: $(basename "$WHEEL_FILE")"
 else
     echo "❌ Wheel build failed."

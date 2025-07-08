@@ -1,9 +1,9 @@
 import numpy as np
 import json
 try:
-    from PySide2 import QtCore
+    from PySide2 import QtCore, QtWidgets
 except ImportError:
-    from PySide6 import QtCore, QtGui, QtWidgets
+    from PySide6 import QtCore, QtWidgets
 from rpa.widgets.annotation.actions import Actions
 from rpa.widgets.annotation.tool_bar import ToolBar
 from rpa.widgets.annotation import svg

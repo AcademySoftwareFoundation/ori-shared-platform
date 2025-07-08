@@ -1,0 +1,3 @@
+scipy==1.13.1
+OpenImageIO==3.0.4
+imageio==2.37.0

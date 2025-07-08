@@ -9,7 +9,7 @@ RPA is an abstraction layer between the review widgets you create and the review
 
 ## Documentation:
 
-TO BE UPDATED!
+[RPA Documentation](https://mariapanneerrajan-spi.github.io/ori-shared-platform/index.html)
 
 ## Contents:
 
@@ -20,41 +20,54 @@ Collection of rpa widgets that facilalte a complete review workflow.
 - **Open RV Pkgs:**  
 Prebuilt packages for adding rpa(Review Plugin API) and rpa widgets into Open RV.
 
-## Installing:
+## Build and Install
+
+Use the following shell scripts to build and install RPA Wheel and Open-RV Packages.
+
+On Windows, use a Unix-like terminal such as mingw64.exe (available through MSYS2) to run the Bash script. Standard Windows Command Prompt (cmd.exe) or PowerShell are not compatible with Bash scripts.
 
 **Step 1:**  
-`>> cd build_scripts\pkgs\`
+Run the following script to build the RPA Wheel and RPA Open RV Packages.  
+`>> build_scripts/build.sh`  
+
+Following is an example of how the output in `build_scripts/output` directory will look like,
+1. rpa-0.2.4-py3-none-any.whl
+2. rpa_core-1.0.rvpkg
+2. rpa_widgets-1.0.rvpkg
 
 **Step 2:**  
-`>> \path\to\openrv\bin\python3 -m pip install --user rpa-*-py3-none-any.whl --force-reinstall`
+Add the following values from your setup into the `build_scripts/install.sh`,
 
-**Step 3:**  
-`>> \path\to\openrv\bin\python3 -m pip install scipy==1.13.1 OpenImageIO==3.0.4 imageio==2.37.0`
+1. **RV_HOME:** Your Open RV's installation path
+2. **RPA_WHL:** Name of the RPA wheel file built in your `build_scripts/output` directory
+3. **RPA_CORE_PKG:** Name of the RPA core Open RV package.
+4. **RPA_WIDGETS_PKG:** Name of the RPA widgets Open RV package.
 
-**Step 4:**  
-Use openrv package manager to install:  
-rpa_core-1.0.rvpkg and  
-rpa_widgets-1.0.rvpkg
+Once the above values are added, then run the script to install,  
+`>> build_scripts/install.sh`  
 
-**Step 5:**  
-Restart openrv
+**Step 3:**
+Launch Open RV
+
+**Step 4:**
+You can find all the RPA widgets under the RPA menu in OpenRV's main menu bar.
 
 ## Docs Publish Workflow:
 
-1. Update your documentation by updating the Sphinx RST files here,  
-`>> cd ./rpa/docs/source`
+1. If you want to update the static documentation you can update the RST files here,  
+`>> docs/source`
 
-2. Go back to the docs director and generate the HTML files,  
-`>> cd ..; make clean; make html`  
+2. If you want to update the dynamic documenation that is pulled from source-code, run the following command,
+`>> cd docs; make clean; make html`  
 
-3. From the root level, copy the contents of the html folder to the docs,  
-`>> cd ../..; rm -rf ./docs; mkdir ./docs`  
-`>> cp -rf ./rpa/docs/build/html/* ./docs/`  
+3. From the rpa root dir, move the contents of the html folder to the docs folder in the root level of rpa,  
+`>> rm -rf ./docs; mkdir ./docs`  
+`>> mv -rf ./rpa/docs/build/html/* ./docs/`  
 
 4. To not use any formating from Github's .nojekyll, add an empty file called,  
 `>> touch ./docs/.nojekyll`
 
 5. Clear the contents of the rpa docs build folder,  
-`>> rm -rf ./rpa/docs/build/*`
+`>> rm -rf ./rpa/docs/build`
 
 5. Now when you push to main, the html docs under ./docs will be hosted as github pages.
