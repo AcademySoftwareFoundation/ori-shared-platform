@@ -22,8 +22,6 @@ class MediaPathOverlay(QtWidgets.QWidget):
         }
         self.__overlay_id = self.__rpa.viewport_api.create_html_overlay(
             html_overlay)
-        current_file_path = os.path.abspath(__file__)
-        current_dir = os.path.dirname(current_file_path)        
 
         # Create toggleable push button
         self.__show_media_path_btn = QtWidgets.QPushButton("Show Media Path")

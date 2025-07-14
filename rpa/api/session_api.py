@@ -321,6 +321,43 @@ class SessionApi(QtCore.QObject):
         """
         return self.__delegate_mngr.call(self.get_bg_mode)
 
+    def set_mix_mode(self, mode):
+        """
+        Set the Background Mix Mode to be used in the session.
+        The Mix Mode is relevant only if a BG playlist is set. The various
+        Mix Modes can be set using integers to identify them. The following
+        are the integers which can be used to set the various available
+        mix modes:
+        0 - None
+        1 - Add
+        2 - Diff
+        3 - Sub
+        4 - Over
+
+        Args:
+            mode (int):
+                The integer that represents the Mix Mode that needs to be set.
+        """
+
+        self.__delegate_mngr.call(self.set_mix_mode, [mode])
+
+    def get_mix_mode(self)->int:
+        """
+        Get the integer that represents the current Background Mix Mode
+        that is set. Note that mix modes are relevant only if a BG playlist
+        is currently present in the Session. Based on the current Mix Mode,
+        one of the following integers will be returned,
+        0 - None
+        1 - Add
+        2 - Diff
+        3 - Sub
+        4 - Over
+
+        Returns:
+            int : Integer representing the current BG mode.
+        """
+        return self.__delegate_mngr.call(self.get_mix_mode)
+
     ###########################################################################
     # Clip Methods                                                            #
     ###########################################################################
@@ -975,20 +1012,20 @@ class SessionApi(QtCore.QObject):
 
         The following are the available modes,
 
-        **0 \: Same Across Playlists**
+        **0 - Same Across Playlists**
 
         Current frame will be synced across all playlists.
         In the case when a single clip is selected in a playlist,
         current frame defaults to first frame of the clip.
 
-        **1 \: First Frame**
+        **1 - First Frame**
 
         Current frame will default to first frame of a selected clip
         or sequence of clips within a playlist or among playlists.
         Only in the case when BG playlist exist, current frame will
         be synced across FG and BG playlists.
 
-        **2 \: Remember Last**
+        **2 - Remember Last**
 
         Current frame will be set to last frame it was at for the
         playlist. Only in the case when BG playlist exist, current
@@ -1008,20 +1045,20 @@ class SessionApi(QtCore.QObject):
 
         The following are the available modes,
 
-        **0 \: Same Across Playlists**
+        **0 - Same Across Playlists**
 
         Current frame will be synced across all playlists.
         In the case when a single clip is selected in a playlist,
         current frame defaults to first frame of the clip.
 
-        **1 \: First Frame**
+        **1 - First Frame**
 
         Current frame will default to first frame of a selected clip
         or sequence of clips within a playlist or among playlists.
         Only in the case when BG playlist exist, current frame will
         be synced across FG and BG playlists.
 
-        **2 \: Remember Last**
+        **2 - Remember Last**
 
         Current frame will be set to last frame it was at for the
         playlist. Only in the case when BG playlist exist, current

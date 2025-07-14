@@ -43,8 +43,10 @@ class RpaCoreMode(QtCore.QObject, rvtypes.MinorMode):
 
     def __pre_render(self, event):
         event.reject()
-        self.__rpa_core.viewport_api.pre_render(event)
-        self.__rpa_core.color_api.pre_render(event)
+        if self.__rpa_core.session_api.get_active_clips(
+        self.__rpa_core.session_api.get_fg_playlist()):
+            self.__rpa_core.viewport_api.pre_render(event)
+            self.__rpa_core.color_api.pre_render(event)
 
     def render(self, event):
         event.reject()

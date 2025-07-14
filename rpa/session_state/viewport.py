@@ -73,6 +73,7 @@ class Viewport:
         self.__bg = None
         self.current_clip = None
         self.bg_mode = 0
+        self.mix_mode = 0
         self.feedback = Feedback()
         self.__transforms = Transforms()
         self.color_channel = 4

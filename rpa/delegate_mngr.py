@@ -58,7 +58,7 @@ Hence signature of the callable should look like this,
     def permission_delegate(self, *args, **kwargs):
         pass
 
-Instead of \*args and \**kwargs you can have the actual args and kwargs
+Instead of args and kwargs you can have the actual args and kwargs
 based on the rpa_method.
 
 Pre Delegates:
@@ -77,7 +77,7 @@ Hence signature of the callable should look like this,
     def pre_delegate(self, *args, **kwargs):
         pass
 
-Instead of \*args and \**kwargs you can have the actual args and kwargs
+Instead of args and kwargs you can have the actual args and kwargs
 based on the rpa_method.
 
 Core Delegate:
@@ -102,7 +102,7 @@ Hence signature of the callable should look like this,
     def post_delegate(self, out, *args, **kwargs):
         pass
 
-Instead of \*args and \**kwargs you can have the actual args and kwargs
+Instead of args and kwargs you can have the actual args and kwargs
 based on the rpa_method.
 """
 
@@ -135,7 +135,7 @@ class DelegateMngr:
             def permission_delegate(self, *args, **kwargs):
                 pass
 
-        Instead of \*args and \**kwargs you can have the actual args and kwargs
+        Instead of args and kwargs you can have the actual args and kwargs
         based on the rpa_method.
 
         Args:
@@ -212,7 +212,7 @@ class DelegateMngr:
             def pre_delegate(self, *args, **kwargs):
                 pass
 
-        Instead of \*args and \**kwargs you can have the actual args and kwargs
+        Instead of args and kwargs you can have the actual args and kwargs
         based on the rpa_method.
 
         Args:
@@ -341,7 +341,7 @@ class DelegateMngr:
             def post_delegate(self, out, *args, **kwargs):
                 pass
 
-        Instead of \*args and \**kwargs you can have the actual args and kwargs
+        Instead of args and kwargs you can have the actual args and kwargs
         based on the rpa_method.
 
         Args:

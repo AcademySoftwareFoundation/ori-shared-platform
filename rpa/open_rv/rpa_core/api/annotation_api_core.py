@@ -271,7 +271,9 @@ class AnnotationApiCore(QtCore.QObject):
 
     def set_pointer(self, stroke_point):
         self.__pen_stroke_point = stroke_point
-        rvc.redraw()
+        pl = self.__session.get_playlist(self.__session.viewport.fg)
+        if pl.active_clip_ids:
+            rvc.redraw()
         return True
 
     def _redraw_ro_annotations(self, clip_id=None):
