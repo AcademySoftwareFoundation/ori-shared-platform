@@ -1012,20 +1012,20 @@ class SessionApi(QtCore.QObject):
 
         The following are the available modes,
 
-        **0 \: Same Across Playlists**
+        **0 - Same Across Playlists**
 
         Current frame will be synced across all playlists.
         In the case when a single clip is selected in a playlist,
         current frame defaults to first frame of the clip.
 
-        **1 \: First Frame**
+        **1 - First Frame**
 
         Current frame will default to first frame of a selected clip
         or sequence of clips within a playlist or among playlists.
         Only in the case when BG playlist exist, current frame will
         be synced across FG and BG playlists.
 
-        **2 \: Remember Last**
+        **2 - Remember Last**
 
         Current frame will be set to last frame it was at for the
         playlist. Only in the case when BG playlist exist, current
@@ -1045,20 +1045,20 @@ class SessionApi(QtCore.QObject):
 
         The following are the available modes,
 
-        **0 \: Same Across Playlists**
+        **0 - Same Across Playlists**
 
         Current frame will be synced across all playlists.
         In the case when a single clip is selected in a playlist,
         current frame defaults to first frame of the clip.
 
-        **1 \: First Frame**
+        **1 - First Frame**
 
         Current frame will default to first frame of a selected clip
         or sequence of clips within a playlist or among playlists.
         Only in the case when BG playlist exist, current frame will
         be synced across FG and BG playlists.
 
-        **2 \: Remember Last**
+        **2 - Remember Last**
 
         Current frame will be set to last frame it was at for the
         playlist. Only in the case when BG playlist exist, current

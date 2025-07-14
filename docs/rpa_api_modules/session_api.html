@@ -6,10 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Session API &#8212; Review Plugin API (RPA) 0.1.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d1102ebc" />
-    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
     <script src="../_static/documentation_options.js?v=01f34227"></script>
-    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -40,42 +41,43 @@ Attrs.</p>
 </section>
 <dl class="py class">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">rpa.api.session_api.</span></span><span class="sig-name descname"><span class="pre">SessionApi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logger</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/rpa/api/session_api.html#SessionApi"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">rpa.api.session_api.</span></span><span class="sig-name descname"><span class="pre">SessionApi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/rpa/api/session_api.html#SessionApi"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QObject</span></code></p>
 <dl class="py attribute">
 <dt class="sig sig-object py">
 <span class="sig-name descname"><span class="pre">SIG_ACTIVE_CLIPS_CHANGED</span></span></dt>
-<dd></dd></dl>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></p>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py">
 <span class="sig-name descname"><span class="pre">SIG_ATTR_VALUES_CHANGED</span></span></dt>
-<dd></dd></dl>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></p>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py">
 <span class="sig-name descname"><span class="pre">SIG_BG_PLAYLIST_CHANGED</span></span></dt>
-<dd></dd></dl>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py">
 <span class="sig-name descname"><span class="pre">SIG_CURRENT_CLIP_CHANGED</span></span></dt>
-<dd></dd></dl>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py">
 <span class="sig-name descname"><span class="pre">SIG_FG_PLAYLIST_CHANGED</span></span></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">SIG_PLAYLISTS_MODIFIED</span></span></dt>
-<dd></dd></dl>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></p>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py">
 <span class="sig-name descname"><span class="pre">SIG_PLAYLIST_MODIFIED</span></span></dt>
-<dd></dd></dl>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py">
@@ -130,7 +132,7 @@ the given index if provided otherwise the clips will be inserted at
 the bottom of the playlist. If ids are provided, they will be used to
 identify the playlists. Make sure the provided ids are uniqiue.
 Recommended to use the following to generate these ids,</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">uuid</span><span class="p">;</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span><span class="p">;</span>
 <span class="n">paths</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;path/to/clip_1&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;path/to/clip_2&quot;</span><span class="p">,</span> <span class="s2">&quot;path/to/audio_clip_2&quot;</span><span class="p">),</span> <span class="s2">&quot;path/to/clip_3&quot;</span><span class="p">]</span>
 <span class="n">ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">]</span>
 </pre></div>
@@ -212,7 +214,7 @@ of the names provided.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">delegate_mngr</span></span></dt>
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">delegate_mngr</span></span></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -519,16 +521,16 @@ playlist currently, then None is returned.</p>
 <span class="sig-name descname"><span class="pre">get_current_frame_mode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../_modules/rpa/api/session_api.html#SessionApi.get_current_frame_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Get the behavior mode of the current frame when changing playlists.</p>
 <p>The following are the available modes,</p>
-<p><strong>0 : Same Across Playlists</strong></p>
+<p><strong>0 - Same Across Playlists</strong></p>
 <p>Current frame will be synced across all playlists.
 In the case when a single clip is selected in a playlist,
 current frame defaults to first frame of the clip.</p>
-<p><strong>1 : First Frame</strong></p>
+<p><strong>1 - First Frame</strong></p>
 <p>Current frame will default to first frame of a selected clip
 or sequence of clips within a playlist or among playlists.
 Only in the case when BG playlist exist, current frame will
 be synced across FG and BG playlists.</p>
-<p><strong>2 : Remember Last</strong></p>
+<p><strong>2 - Remember Last</strong></p>
 <p>Current frame will be set to last frame it was at for the
 playlist. Only in the case when BG playlist exist, current
 frame will be synced across FG and BG playlists.</p>
@@ -708,6 +710,28 @@ will always have a FG playlist.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>List[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">get_mix_mode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../_modules/rpa/api/session_api.html#SessionApi.get_mix_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Get the integer that represents the current Background Mix Mode
+that is set. Note that mix modes are relevant only if a BG playlist
+is currently present in the Session. Based on the current Mix Mode,
+one of the following integers will be returned,
+0 - None
+1 - Add
+2 - Diff
+3 - Sub
+4 - Over</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Integer representing the current BG mode.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1164,16 +1188,16 @@ application to find the media file from the given path are in place.</p>
 <span class="sig-name descname"><span class="pre">set_current_frame_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/rpa/api/session_api.html#SessionApi.set_current_frame_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Set the behavior of the current-frame when changing playlists.</p>
 <p>The following are the available modes,</p>
-<p><strong>0 : Same Across Playlists</strong></p>
+<p><strong>0 - Same Across Playlists</strong></p>
 <p>Current frame will be synced across all playlists.
 In the case when a single clip is selected in a playlist,
 current frame defaults to first frame of the clip.</p>
-<p><strong>1 : First Frame</strong></p>
+<p><strong>1 - First Frame</strong></p>
 <p>Current frame will default to first frame of a selected clip
 or sequence of clips within a playlist or among playlists.
 Only in the case when BG playlist exist, current frame will
 be synced across FG and BG playlists.</p>
-<p><strong>2 : Remember Last</strong></p>
+<p><strong>2 - Remember Last</strong></p>
 <p>Current frame will be set to last frame it was at for the
 playlist. Only in the case when BG playlist exist, current
 frame will be synced across FG and BG playlists.</p>
@@ -1273,6 +1297,26 @@ given playlist Id.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">set_mix_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/rpa/api/session_api.html#SessionApi.set_mix_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Set the Background Mix Mode to be used in the session.
+The Mix Mode is relevant only if a BG playlist is set. The various
+Mix Modes can be set using integers to identify them. The following
+are the integers which can be used to set the various available
+mix modes:
+0 - None
+1 - Add
+2 - Diff
+3 - Sub
+4 - Over</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mode</strong> (<em>int</em>) – The integer that represents the Mix Mode that needs to be set.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
 <span class="sig-name descname"><span class="pre">set_playlist_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/rpa/api/session_api.html#SessionApi.set_playlist_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Set the name of the playlist with the given id.</p>
 <dl class="field-list simple">
@@ -1291,11 +1335,6 @@ given playlist Id.</p>
 </dl>
 </dd></dl>
 
-<dl class="py attribute">
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">staticMetaObject</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;PySide2.QtCore.QMetaObject</span> <span class="pre">object&gt;</span></em></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 
@@ -1304,7 +1343,7 @@ given playlist Id.</p>
           
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <h1 class="logo"><a href="../index.html">Review Plugin API (RPA)</a></h1>
 
@@ -1315,7 +1354,16 @@ given playlist Id.</p>
 
 
 
-<h3>Navigation</h3>
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">RPA API Modules</a><ul class="current">
@@ -1343,16 +1391,6 @@ given playlist Id.</p>
   </ul></li>
 </ul>
 </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</div>
-<script>document.getElementById('searchbox').style.display = "block"</script>
 
 
 
@@ -1369,8 +1407,8 @@ given playlist Id.</p>
       &#169;2025, Sony Pictures Imageworks (SPI).
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
-      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
       
       |
       <a href="../_sources/rpa_api_modules/session_api.rst.txt"

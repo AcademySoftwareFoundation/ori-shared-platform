@@ -13,12 +13,6 @@ RPA implementation in Open RV has been done using the following 2 RV Packages th
 1. ./open_rv/pkgs/rpa_core_pkg/rpa_core_mode.py
 2. ./open_rv/pkgs/rpa_widgets_pkg/rpa_widgets_mode.py
 
-| **rpa_core_mode:**
-| This RV package is responsible for setting up RPA core in RV, making it available for subsequent RV Packages that will need RPA Core.
-
-| **rpa_widgets_mode:**
-| This RV package is responsible for loading the RPA widgets into RV. It makes use of the RPA core that was previously setup by the rpa_core_mode RV Package. All RPA widgets doesn't need to be loaded only by this RV Packages, we have set it up this way as an example, you can have any number of RV Packages that use any number of RPA widgets.
-
 =====================
 RPA Core - Rv Package
 =====================
@@ -61,6 +55,109 @@ RPA Widgets - Rv Package
 In the RPA repository, the RV Package responsible for adding all available RPA widgets into RV can be found at:
 **./open_rv/pkgs/rpa_widgets_pkg/rpa_widgets_mode.py**
 
+---------
+RPA Mode:
+---------
+Since RPA has its own Session that works on top of the RV Session, using RV widgets that directly manipulate the RV Session without going through the RPA Session will cause unexpected behavior. So this RV Package, adds a menu in RV's main menu-bar called **RPA Mode**.
+
+.. image:: _static/rpa_mode.png
+   :alt: RPA Mode Menu in RV
+   :align: center
+
+By default RPA mode is not enabled so that you can continue to use all RV Session features without any interference from RPA Session. When you are want to use RPA Session with all the RPA widgets, you can enable RPA Mode by clicking on the **RPA Mode** menu in the main menu-bar of RV.
+
+When you enter RPA mode your current RV Session will be cleared and many RV features/widgets will be replaced/disabled to accommodate RPA Session. So make sure to save your RV Session if needed before proceeding.
+
+.. image:: _static/rpa_mode_warning.png
+   :alt: RPA Mode Warning
+   :align: center
+
+~~~~~~~~~~~~~~~~~~~~~~~~~
+RPA Mode User Experience:
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In RPA mode, after the following RV featurs are replaced/disabled you will be able to use the remaining RV features/widgets interchangeably with RPA widgets for the most part.
+
+For the best RPA Mode user experience, it is recommended to primarily use RPA widgets instead of default RV widgets for your review feedback workflows. This is because the RPA widgets are designed to work seamlessly with the RPA Session and provide a more consistent user experience.
+
+.. image:: _static/rpa_mode_ux.png
+   :alt: RPA Mode User Experience
+   :align: center
+
+~~~~~~~~~~~~~~~~~
+Widgets Replaced:
+~~~~~~~~~~~~~~~~~
+- RV Session Manager is replaced by **RPA Session Manager** (toggle with 'x' hotkey)
+- RV Timeline is replaced by **RPA Timeline Manager** (toggle with 'F2' hotkey)
+- RV Annotation Tools is replaced by **RPA Annotation Tools** (toggle with 'F10' hotkey)
+
+~~~~~~~~~~~~~~
+Menus Removed:
+~~~~~~~~~~~~~~
+
+- **File**
+- **Edit**
+- **Annotation**
+- **Sequence**
+- **Stack**
+- **Layout**
+- **Control**:
+  
+  - Next Marked Frame
+  - Prev Marked Frame
+  - Matching Frame Of Next Source
+  - Matching Frame Of Previous Source
+
+- **Tools**:
+  
+  - Default Views
+  - Sequence
+  - Replace
+  - Over
+  - Add
+  - Difference
+  - Different (Inverted)
+  - Title
+  - Menu Bar
+  - Top View Toolbar
+  - Bottom View Toolbar
+  - Session Manager
+  - Annotation
+  - Timeline
+
+- **Image**:
+  
+  - Rotation
+  - Flip
+  - Flop
+  - Cycle Stack Forward
+  - Cycle Stack Backward
+
+~~~~~~~~~~~~
+Menus Added:
+~~~~~~~~~~~~
+- **File(rpa)**
+   - Add Clips
+   - Save RPA Session
+   - Append Save RPA Session
+   - Replace Save RPA Session
+
+- **Widgets(rpa)**
+   - Session Manager
+   - Background Modes
+   - Annotation Tools
+   - Color Corrector
+   - Timeline
+   - Media Path Overlay
+   - Session Assistant
+   - RPA Interpreter
+
+
+
+-----------------------------
+Setting up RPA widgets in RV:
+-----------------------------
+
 .. image:: _static/widgets_in_rpa.png
    :alt: Rpa Session is the source of truth
    :align: center
@@ -100,13 +197,15 @@ Next, instances of the desired RPA widgets are created by passing:
    ...
    self.__session_manager = SessionManager(self.__rpa, self.__main_window)
 
-These widgets are then integrated into RV using the RV Package mechanism to define new menus and keyboard shortcuts for showing and hiding them.
-
-That's it, you now have fully functional RPA Review Sessions running directly inside RV.
 
 ====================================================
 How to build and install the above RPA RV Packages ?
 ====================================================
+Follow the step by step instructions in **./rpa/README.md** under the "Build and Install" heading.
 
-Instructions to build and install the above RPA RV Packages is found under this directory of the RPA repo,
-**./build_scripts/**
+=================
+Media Attribution
+=================
+
+Documentation includes clips/screenshots from *Big Buck Bunny* by the Blender Foundation, licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).  
+Source: https://peach.blender.org/
