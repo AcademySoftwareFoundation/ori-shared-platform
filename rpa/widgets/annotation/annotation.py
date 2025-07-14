@@ -359,14 +359,14 @@ class Annotation(QtCore.QObject):
         interactive_mode = None
         if event.modifiers() == QtCore.Qt.NoModifier:
             interactive_mode = self.__interactive_mode
-        if event.modifiers() == QtCore.Qt.ControlModifier:
-            interactive_mode = C.INTERACTIVE_MODE_PEN
-        if event.modifiers() == QtCore.Qt.ControlModifier | QtCore.Qt.ShiftModifier:
-            interactive_mode = C.INTERACTIVE_MODE_HARD_ERASER
-        if event.modifiers() == QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier:
-            interactive_mode = C.INTERACTIVE_MODE_LINE
-        if event.modifiers() == QtCore.Qt.ControlModifier | QtCore.Qt.MetaModifier:
-            interactive_mode = C.INTERACTIVE_MODE_MULTI_LINE
+        # if event.modifiers() == QtCore.Qt.ControlModifier:
+        #     interactive_mode = C.INTERACTIVE_MODE_PEN
+        # if event.modifiers() == QtCore.Qt.ControlModifier | QtCore.Qt.ShiftModifier:
+        #     interactive_mode = C.INTERACTIVE_MODE_HARD_ERASER
+        # if event.modifiers() == QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier:
+        #     interactive_mode = C.INTERACTIVE_MODE_LINE
+        # if event.modifiers() == QtCore.Qt.ControlModifier | QtCore.Qt.MetaModifier:
+        #     interactive_mode = C.INTERACTIVE_MODE_MULTI_LINE
         if interactive_mode is None:
             return False
 

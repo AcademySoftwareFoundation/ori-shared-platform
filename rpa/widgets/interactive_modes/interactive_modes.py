@@ -51,7 +51,7 @@ class InteractiveModes(QtCore.QObject):
         self.__pen_mode.setIcon(
             QtGui.QIcon(QtGui.QPixmap.fromImage(QtGui.QImage.fromData(
                 C.PEN.format(C.SVG_COLOR).encode("utf-8")))))
-        self.__pen_mode.setToolTip("Pen (Ctrl)")
+        # self.__pen_mode.setToolTip("Pen (Ctrl)")
         self.__pen_mode.toggled.connect(
             lambda is_checked: set_interactive_mode(C.INTERACTIVE_MODE_PEN if is_checked else None))
 
@@ -59,7 +59,7 @@ class InteractiveModes(QtCore.QObject):
         self.__line_mode.setCheckable(True)
         self.__line_mode.setIcon(
                 QtGui.QIcon(QtGui.QPixmap(":line.png")))
-        self.__line_mode.setToolTip("Line (Ctrl + Alt)")
+        # self.__line_mode.setToolTip("Line (Ctrl + Alt)")
         self.__line_mode.toggled.connect(
             lambda is_checked: set_interactive_mode(C.INTERACTIVE_MODE_LINE if is_checked else None))
 
@@ -67,7 +67,7 @@ class InteractiveModes(QtCore.QObject):
         self.__multi_line_mode.setCheckable(True)
         self.__multi_line_mode.setIcon(
                 QtGui.QIcon(QtGui.QPixmap(":multiline.png")))
-        self.__multi_line_mode.setToolTip("Multi Line (Ctrl + Meta)")
+        # self.__multi_line_mode.setToolTip("Multi Line (Ctrl + Meta)")
         self.__multi_line_mode.toggled.connect(
             lambda is_checked: set_interactive_mode(C.INTERACTIVE_MODE_MULTI_LINE if is_checked else None))
 
@@ -92,7 +92,7 @@ class InteractiveModes(QtCore.QObject):
         self.__hard_eraser_mode.setIcon(
             QtGui.QIcon(QtGui.QPixmap.fromImage(QtGui.QImage.fromData(
                 C.HARD_ERASER.format(C.SVG_COLOR).encode("utf-8")))))
-        self.__hard_eraser_mode.setToolTip("Hard Eraser (Ctrl + Shift)")
+        # self.__hard_eraser_mode.setToolTip("Hard Eraser (Ctrl + Shift)")
         self.__hard_eraser_mode.toggled.connect(
             lambda is_checked: set_interactive_mode(C.INTERACTIVE_MODE_HARD_ERASER if is_checked else None))
 

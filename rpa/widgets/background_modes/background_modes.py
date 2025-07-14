@@ -37,6 +37,12 @@ class BackgroundModes(QtCore.QObject):
         self.actions.wipe.triggered.connect(self.__toggle_wipe)
         self.actions.swap_background.triggered.connect(self.__swap_background)
 
+        self.actions.none_mix_mode.triggered.connect(lambda state: self.__toggle_mix_mode(state, 0))
+        self.actions.add_mix_mode.triggered.connect(lambda state: self.__toggle_mix_mode(state, 1))
+        self.actions.diff_mix_mode.triggered.connect(lambda state: self.__toggle_mix_mode(state, 2))
+        self.actions.sub_mix_mode.triggered.connect(lambda state: self.__toggle_mix_mode(state, 3))
+        self.actions.over_mix_mode.triggered.connect(lambda state: self.__toggle_mix_mode(state, 4))
+
     def __turn_off_background(self):
         self.__session_api.set_bg_playlist(None)
 
@@ -74,6 +80,12 @@ class BackgroundModes(QtCore.QObject):
         else:
             self.__enable_actions(True)
             self.__bg_mode_changed(True, self.__session_api.get_bg_mode())
+
+    def __toggle_mix_mode(self, state, mode):
+        if state:
+            self.__session_api.set_mix_mode(mode)
+        else:
+            self.__session_api.set_bg_mode(0)
 
     def __enable_actions(self, state):
         for action in [

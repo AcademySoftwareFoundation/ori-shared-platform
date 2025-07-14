@@ -45,15 +45,15 @@ class SessionIO(QtCore.QObject):
                 self.save_session_action]
 
     def __init_actions(self):
-        self.append_session_action = QAction("Append Session")
+        self.append_session_action = QAction("Append Session", parent=self.__main_window)
         self.append_session_action.setStatusTip(
             "Append a session file to the current session")
 
-        self.replace_session_action = QAction("Replace Session")
+        self.replace_session_action = QAction("Replace Session", parent=self.__main_window)
         self.replace_session_action.setStatusTip(
             "Replace the current session with a session file")
 
-        self.save_session_action = QAction("Save Session")
+        self.save_session_action = QAction("Save Session", parent=self.__main_window)
         self.save_session_action.setStatusTip(
             "Save the current session to a file")
 

@@ -182,6 +182,7 @@ class SessionApiCore(QtCore.QObject):
                 self.__session.get_playlist(self.__session.viewport.bg))
         self.__update_fg_playlist()
         self.__set_bg_mode(self.__session.viewport.bg_mode)
+        self.__set_mix_mode(self.__session.viewport.mix_mode)
         self.__update_current_clip()
         self.__set_current_frame(current_frame)
         self.__redraw_annotations()
@@ -681,6 +682,50 @@ class SessionApiCore(QtCore.QObject):
         commands.setNodeInputs(view, [fg_node, bg_node])
         prop_util.set_property("defaultLayout.layout.mode", ["row"])
         commands.setViewNode(view)
+
+    def set_mix_mode(self, mode):
+        self.__set_mix_mode(mode)
+        self.__session.viewport.mix_mode = mode
+
+    def __set_mix_mode(self, mode):
+        if self.__session.viewport.bg is None:
+            return
+        mode_to_type_map = {
+            0: "over",
+            1: "add",
+            2: "-difference",
+            3: "difference",
+            4: "replace"
+        }
+        if mode not in mode_to_type_map.keys():
+            return
+        frame = commands.frame()
+        view = "defaultStack"
+        fg_playlist = self.__session.get_playlist(self.__session.viewport.fg)
+        fg_stack_group_nodes = [self.__session.get_clip(clip_id).get_custom_attr("rv_stack_group")
+                                for clip_id in fg_playlist.active_clip_ids]
+        fg_stack_nodes = [extra_commands.nodesInGroupOfType(stack_group, "RVStack")[0]
+                          for stack_group in fg_stack_group_nodes]
+        fg_node = fg_playlist.get_custom_attr("rv_sequence_group")
+        bg_playlist = self.__session.get_playlist(self.__session.viewport.bg)
+        bg_stack_group_nodes = [self.__session.get_clip(clip_id).get_custom_attr("rv_stack_group")
+                                for clip_id in bg_playlist.active_clip_ids]
+        bg_stack_nodes = [extra_commands.nodesInGroupOfType(stack_group, "RVStack")[0]
+                          for stack_group in bg_stack_group_nodes]
+
+        bg_node = bg_playlist.get_custom_attr("rv_sequence_group")
+
+
+        for node in fg_stack_nodes:
+            prop_util.set_property(f'{node}.composite.type', [mode_to_type_map[mode]])
+        for node in bg_stack_nodes:
+            prop_util.set_property(f'{node}.composite.type', ["over"])
+        commands.setNodeInputs(view, [fg_node, bg_node])
+        commands.setViewNode(view)
+        commands.setFrame(frame)
+
+    def get_mix_mode(self):
+        return self.__session.viewport.mix_mode
 
     def __update_clip_nodes_in_playlist_node(self, playlist):
         clip_nodes = [self.__session.get_clip(clip_id).\
