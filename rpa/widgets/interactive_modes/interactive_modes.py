@@ -46,29 +46,26 @@ class InteractiveModes(QtCore.QObject):
         self.__lasso_mode.toggled.connect(
             lambda is_checked: set_interactive_mode(C.INTERACTIVE_MODE_LASSO if is_checked else None))
 
-        self.__pen_mode = QAction("Pen")
-        self.__pen_mode.setCheckable(True)
-        self.__pen_mode.setIcon(
+        self.pen_mode = QAction("Pen")
+        self.pen_mode.setCheckable(True)
+        self.pen_mode.setIcon(
             QtGui.QIcon(QtGui.QPixmap.fromImage(QtGui.QImage.fromData(
                 C.PEN.format(C.SVG_COLOR).encode("utf-8")))))
-        # self.__pen_mode.setToolTip("Pen (Ctrl)")
-        self.__pen_mode.toggled.connect(
+        self.pen_mode.toggled.connect(
             lambda is_checked: set_interactive_mode(C.INTERACTIVE_MODE_PEN if is_checked else None))
 
-        self.__line_mode = QAction("Line")
-        self.__line_mode.setCheckable(True)
-        self.__line_mode.setIcon(
+        self.line_mode = QAction("Line")
+        self.line_mode.setCheckable(True)
+        self.line_mode.setIcon(
                 QtGui.QIcon(QtGui.QPixmap(":line.png")))
-        # self.__line_mode.setToolTip("Line (Ctrl + Alt)")
-        self.__line_mode.toggled.connect(
+        self.line_mode.toggled.connect(
             lambda is_checked: set_interactive_mode(C.INTERACTIVE_MODE_LINE if is_checked else None))
 
-        self.__multi_line_mode = QAction("Multi Line")
-        self.__multi_line_mode.setCheckable(True)
-        self.__multi_line_mode.setIcon(
+        self.multi_line_mode = QAction("Multi Line")
+        self.multi_line_mode.setCheckable(True)
+        self.multi_line_mode.setIcon(
                 QtGui.QIcon(QtGui.QPixmap(":multiline.png")))
-        # self.__multi_line_mode.setToolTip("Multi Line (Ctrl + Meta)")
-        self.__multi_line_mode.toggled.connect(
+        self.multi_line_mode.toggled.connect(
             lambda is_checked: set_interactive_mode(C.INTERACTIVE_MODE_MULTI_LINE if is_checked else None))
 
         self.__airbrush_mode = QAction("Airbrush")
@@ -87,13 +84,12 @@ class InteractiveModes(QtCore.QObject):
         self.__text_mode.toggled.connect(
             lambda is_checked: set_interactive_mode(C.INTERACTIVE_MODE_TEXT if is_checked else None))
 
-        self.__hard_eraser_mode = QAction("Hard Eraser")
-        self.__hard_eraser_mode.setCheckable(True)
-        self.__hard_eraser_mode.setIcon(
+        self.hard_eraser_mode = QAction("Hard Eraser")
+        self.hard_eraser_mode.setCheckable(True)
+        self.hard_eraser_mode.setIcon(
             QtGui.QIcon(QtGui.QPixmap.fromImage(QtGui.QImage.fromData(
                 C.HARD_ERASER.format(C.SVG_COLOR).encode("utf-8")))))
-        # self.__hard_eraser_mode.setToolTip("Hard Eraser (Ctrl + Shift)")
-        self.__hard_eraser_mode.toggled.connect(
+        self.hard_eraser_mode.toggled.connect(
             lambda is_checked: set_interactive_mode(C.INTERACTIVE_MODE_HARD_ERASER if is_checked else None))
 
         self.__soft_eraser_mode = QAction("Soft Eraser")
@@ -144,15 +140,15 @@ class InteractiveModes(QtCore.QObject):
 
         self.tool_bar.addSeparator()
 
-        self.tool_bar.addAction(self.__pen_mode)
-        self.tool_bar.addAction(self.__line_mode)
-        self.tool_bar.addAction(self.__multi_line_mode)
+        self.tool_bar.addAction(self.pen_mode)
+        self.tool_bar.addAction(self.line_mode)
+        self.tool_bar.addAction(self.multi_line_mode)
         self.tool_bar.addAction(self.__airbrush_mode)
         self.tool_bar.addAction(self.__text_mode)
 
         self.tool_bar.addSeparator()
 
-        self.tool_bar.addAction(self.__hard_eraser_mode)
+        self.tool_bar.addAction(self.hard_eraser_mode)
         self.tool_bar.addAction(self.__soft_eraser_mode)
 
         self.tool_bar.addSeparator()
@@ -179,18 +175,18 @@ class InteractiveModes(QtCore.QObject):
             self.__lasso_mode.blockSignals(True)
             self.__lasso_mode.toggle()
             self.__lasso_mode.blockSignals(False)
-        if  self.__pen_mode.isChecked() != (mode == C.INTERACTIVE_MODE_PEN):
-            self.__pen_mode.blockSignals(True)
-            self.__pen_mode.toggle()
-            self.__pen_mode.blockSignals(False)
-        if  self.__line_mode.isChecked() != (mode == C.INTERACTIVE_MODE_LINE):
-            self.__line_mode.blockSignals(True)
-            self.__line_mode.toggle()
-            self.__line_mode.blockSignals(False)
-        if  self.__multi_line_mode.isChecked() != (mode == C.INTERACTIVE_MODE_MULTI_LINE):
-            self.__multi_line_mode.blockSignals(True)
-            self.__multi_line_mode.toggle()
-            self.__multi_line_mode.blockSignals(False)
+        if  self.pen_mode.isChecked() != (mode == C.INTERACTIVE_MODE_PEN):
+            self.pen_mode.blockSignals(True)
+            self.pen_mode.toggle()
+            self.pen_mode.blockSignals(False)
+        if  self.line_mode.isChecked() != (mode == C.INTERACTIVE_MODE_LINE):
+            self.line_mode.blockSignals(True)
+            self.line_mode.toggle()
+            self.line_mode.blockSignals(False)
+        if  self.multi_line_mode.isChecked() != (mode == C.INTERACTIVE_MODE_MULTI_LINE):
+            self.multi_line_mode.blockSignals(True)
+            self.multi_line_mode.toggle()
+            self.multi_line_mode.blockSignals(False)
         if self.__airbrush_mode.isChecked() != (mode == C.INTERACTIVE_MODE_AIRBRUSH):
             self.__airbrush_mode.blockSignals(True)
             self.__airbrush_mode.toggle()
@@ -199,10 +195,10 @@ class InteractiveModes(QtCore.QObject):
             self.__text_mode.blockSignals(True)
             self.__text_mode.toggle()
             self.__text_mode.blockSignals(False)
-        if self.__hard_eraser_mode.isChecked() != (mode == C.INTERACTIVE_MODE_HARD_ERASER):
-            self.__hard_eraser_mode.blockSignals(True)
-            self.__hard_eraser_mode.toggle()
-            self.__hard_eraser_mode.blockSignals(False)
+        if self.hard_eraser_mode.isChecked() != (mode == C.INTERACTIVE_MODE_HARD_ERASER):
+            self.hard_eraser_mode.blockSignals(True)
+            self.hard_eraser_mode.toggle()
+            self.hard_eraser_mode.blockSignals(False)
         if self.__soft_eraser_mode.isChecked() != (mode == C.INTERACTIVE_MODE_SOFT_ERASER):
             self.__soft_eraser_mode.blockSignals(True)
             self.__soft_eraser_mode.toggle()

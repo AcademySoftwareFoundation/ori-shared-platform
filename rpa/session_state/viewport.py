@@ -79,6 +79,7 @@ class Viewport:
         self.color_channel = 4
         self.fstop = 0.0
         self.gamma = 1.0
+        self.rotation = 0
         self.__text_cursor = TextCursor()
         self.__cross_hair_cursor = None
         seed = os.environ.get("HTML_OVERLAY_UUID_SEED")

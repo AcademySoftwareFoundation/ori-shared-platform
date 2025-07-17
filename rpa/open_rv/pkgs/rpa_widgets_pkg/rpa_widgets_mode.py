@@ -16,6 +16,7 @@ from rpa.widgets.timeline.timeline import TimelineController
 from rpa.widgets.annotation.annotation import Annotation
 from rpa.widgets.interactive_modes.interactive_modes import InteractiveModes
 from rpa.widgets.color_corrector.controller import Controller as ColorCorrectorController
+from rpa.widgets.image_controller.image_controller import ImageController
 from rpa.widgets.background_modes.background_modes import BackgroundModes
 from rpa.widgets.rpa_interpreter.rpa_interpreter import RpaInterpreter
 from rpa.widgets.session_io.session_io import SessionIO
@@ -30,8 +31,51 @@ from rpa.widgets.test_widgets.test_delegate_mngr import TestDelegateMngr
 from rpa.utils import default_connection_maker
 
 
+def create_config(main_window):
+    config = QtCore.QSettings("imageworks.com", "rpa", main_window)
+    config.beginGroup("rpa")
+    return config
+
+
+def create_logger():
+    if platform.system() == 'Windows':
+        log_dir = os.path.join(os.environ["APPDATA"], "rpa")
+    elif platform.system() == 'Linux' or platform.system() == 'Darwin':
+        log_dir = os.path.join(os.environ["HOME"], ".rpa")
+    else:
+        raise Exception("Unsupported platform!")
+
+    if not os.path.exists(log_dir):
+        os.mkdir(log_dir)
+    log_filepath = os.path.join(log_dir, "rpa.log")
+
+    logger = logging.getLogger("rpa")
+    logger.setLevel(logging.DEBUG)
+    if not logger.handlers:
+        handler = RotatingFileHandler(
+            log_filepath, mode="a", maxBytes= 10 * 1024 * 1024, backupCount=5)
+        handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter(
+            "%(pathname)s %(funcName)s %(lineno)d:\n %(asctime)s %(levelname)s %(message)s\n",
+            datefmt="%Y-%m-%d %H:%M:%S")
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.propagate = False
+    logger.info("[RPA] RPA Logger Created")
+    return logger
+
+
 def get_core_view(self):
     return self._core_view
+
+
+class DockWidget(QtWidgets.QDockWidget):
+    def __init__(self, title , parent):
+        super().__init__(title, parent)
+        self.setFeatures(
+            QtWidgets.QDockWidget.DockWidgetClosable | \
+            QtWidgets.QDockWidget.DockWidgetMovable)
+
 
 class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
 
@@ -40,26 +84,143 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
         QtCore.QObject.__init__(self)
         rvtypes.MinorMode.__init__(self)
 
-        commands.setViewNode("defaultSequence")
+        self.init(
+            "RpaWidgetsMode",
+            [("session-initialized", self.__rv_session_initialized, "")],
+            None
+        )
 
-        self.init("RpaMode", None, None,
-            menu=[("RPA", [
-                ("RPA Mode", self.__use_rpa_mode, None, None)
-            ])])
-
-    def __setup_rpa_session_mode(self):
         self.__main_window = rv.qtutils.sessionWindow()
+        self.__viewport_widget = self.__main_window.findChild(
+            QtWidgets.QWidget, "no session")
         app = QtWidgets.QApplication.instance()
         self.__rpa_core = app.rpa_core
+        self.__is_rpa_mode = False
 
+        self.__should_set_rpa_mode = \
+            commands.readSettings("rpa", "is_rpa_mode", False)
+        app.installEventFilter(self)
+
+    def __rv_session_initialized(self, event):
+        event.reject()
+        if self.__should_set_rpa_mode:
+            self.__setup_rpa_mode()
+        else:
+            commands.setViewNode("defaultSequence")
+
+    def eventFilter(self, object, event):
+        if isinstance(object, QtWidgets.QMenuBar) and \
+        event.type() == QtCore.QEvent.Paint:
+            self.__setup_switch_mode_action()
+
+        if not self.__is_rpa_mode:
+            return False
+
+        if isinstance(object, QtWidgets.QMenuBar) and \
+        event.type() == QtCore.QEvent.Paint:
+            self.__setup_rpa_mode_menus(object)
+
+        if isinstance(object, QtWidgets.QMenu) and \
+        event.type() == QtCore.QEvent.Show:
+            parent = object.parent()
+            if parent is self.__main_window:
+                self.__setup_rpa_mode_menus(object)
+
+        if isinstance(object, QtWidgets.QToolBar) and \
+        object.objectName() in ["topToolBar", "bottomToolBar"]:
+            object.hide()
+
+        if isinstance(object, QtWidgets.QWidget) and \
+        event.type() == QtCore.QEvent.Show:
+            if object.objectName() == "session_manager":
+                object.hide()
+
+        if isinstance(object, QtWidgets.QDockWidget) and \
+        event.type() == QtCore.QEvent.Show and \
+        hasattr(object, "widget") and \
+        object.widget().objectName() == "annotationTool":
+            object.hide()
+
+        if object is self.__viewport_widget:
+            if event.type() == QtCore.QEvent.MouseButtonDblClick:
+                self.__add_clips()
+                return True
+
+        return False
+
+    def __setup_switch_mode_action(self):
+        menu = self.__main_window.menuBar()
+        if menu is None: return
+        open_rv_action = None
+        for action in menu.actions():
+            if action.text() == "Open RV":
+                open_rv_action = action
+                break
+        else: return
+        menu = open_rv_action.menu()
+        if not menu: return
+
+        switch_mode_action = None
+        quit_open_rv_action = None
+        for action in menu.actions():
+            if action.property("is_rpa_switch_action"):
+                switch_mode_action = action
+            elif action.text() == "Quit Open RV":
+                quit_open_rv_action = action
+
+        if switch_mode_action is None:
+            action = QtWidgets.QAction("Switch to RPA", parent=self.__main_window)
+            action.triggered.connect(self.__switch_mode)
+            action.setProperty("is_rpa_switch_action", True)
+            menu.insertAction(quit_open_rv_action, action)
+        else:
+            if self.__is_rpa_mode:
+                switch_mode_action.setText("Exit out of RPA")
+
+    def __switch_mode(self):
+        if self.__is_rpa_mode:
+            msg_box = QtWidgets.QMessageBox()
+            msg_box.setIcon(QtWidgets.QMessageBox.Warning)
+            msg_box.setWindowTitle("Warning")
+            msg_box.setText(
+                "You are about to exit RPA Mode!<br><br><br>"\
+                "1) Exiting will <b>close OpenRV</b>. Kindly <u>save your RPA session</u>, if needed.</b><br><br>"\
+                "2) Next time you open OpenRV, it will be in <b>regular mode</b>.<br><br>"\
+                "3) You'll need to <b>manually switch</b> back to RPA Mode if needed.</b><br><br><br>"\
+                "Are you sure you want exit RPA Mode ?"
+            )
+            msg_box.setStandardButtons(
+                QtWidgets.QMessageBox.Ok|QtWidgets.QMessageBox.No)
+            result = msg_box.exec_()
+            if result == QtWidgets.QMessageBox.Ok:
+                commands.writeSettings("rpa", "is_rpa_mode", False)
+                commands.close()
+        else:
+            msg_box = QtWidgets.QMessageBox()
+            msg_box.setIcon(QtWidgets.QMessageBox.Warning)
+            msg_box.setWindowTitle("Warning")
+            msg_box.setText(
+                "You are about to use an <b><u>Experimental</u> RPA Session</b> instead of RV Session in RV!<br><br><br>"\
+                "When you enter RPA Mode the following happens,<br><br>"\
+                "1) Your current <span style='color:red'>RV Session will be cleared</span>.<br><br>"\
+                "2) Many <span style='color:red'>RV features/widgets will be replaced/disabled</span> to accomodate RPA Session.<br><br><br>"\
+                "Kindly <u>save your RV Session if needed</u> before proceeding!<br><br><br>"\
+                "Are you sure you want enter RPA Mode ?"
+            )
+            msg_box.setStandardButtons(
+                QtWidgets.QMessageBox.Ok|QtWidgets.QMessageBox.No)
+            result = msg_box.exec_()
+            if result == QtWidgets.QMessageBox.Ok:
+                self.__setup_rpa_mode()
+
+    def __setup_rpa_mode(self):
+        self.__is_rpa_mode = True
         self.__rpa = Rpa(create_config(self.__main_window), create_logger())
         default_connection_maker.set_core_delegates_for_all_rpa(
             self.__rpa, self.__rpa_core)
 
         self.__rpa.session_api.get_attrs_metadata()
 
-        self.__viewport_widget = self.__main_window.findChild(
-            QtWidgets.QWidget, "no session")
         self.__rpa_core.viewport_api._set_viewport_widget(self.__viewport_widget)
         self.__main_window._core_view = self.__viewport_widget
         self.__main_window.get_core_view = types.MethodType(get_core_view, self.__main_window)
@@ -71,7 +232,7 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
         self.__rpa.session_api.clear()
 
         self.__session_io = SessionIO(self.__rpa, self.__main_window)
-        self.__setup_rpa_menu(self.__main_window.menuBar())
+        self.__setup_rpa_mode_menus(self.__main_window.menuBar())
 
         for toolbar in self.__main_window.findChildren(QtWidgets.QToolBar):
             if toolbar.objectName() in ["topToolBar", "bottomToolBar"]:
@@ -109,13 +270,12 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
         commands.unbind("default", "global", 'key-down--f2')
         commands.bind("default", "global", 'key-down--f2', self._show_timeline, "Show Timeline")
 
-        app = QtWidgets.QApplication.instance()
-        app.installEventFilter(self)
         self.__viewport_widget.installEventFilter(self)
 
         self.__session_manager_dock = None
         self.__session_assistant_dock = None
         self.__timeline_toolbar = None
+        self.__image_controller = None
         self.__annotation_dock = None
         self.__color_corrector_dock = None
         self.__background_modes_dock = None
@@ -135,40 +295,33 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
         self.__show_timeline()
         self.__show_color_corrector()
 
-    def eventFilter(self, object, event):
-        if isinstance(object, QtWidgets.QMenuBar) and \
-        event.type() == QtCore.QEvent.Paint:
-            self.__setup_rpa_menu(object)
+        commands.writeSettings("rpa", "is_rpa_mode", True)
 
-        if isinstance(object, QtWidgets.QMenu) and \
-        event.type() == QtCore.QEvent.Show:
-            parent = object.parent()
-            if parent is self.__main_window:
-                self.__setup_rpa_menu(object)
-
-        if isinstance(object, QtWidgets.QToolBar) and \
-        object.objectName() in ["topToolBar", "bottomToolBar"]:
-            object.hide()
-
-        if isinstance(object, QtWidgets.QWidget) and \
-        event.type() == QtCore.QEvent.Show:
-            if object.objectName() == "session_manager":
-                object.hide()
-
-        if isinstance(object, QtWidgets.QDockWidget) and \
-        event.type() == QtCore.QEvent.Show and \
-        hasattr(object, "widget") and \
-        object.widget().objectName() == "annotationTool":
-            object.hide()
-
-        if object is self.__viewport_widget:
-            if event.type() == QtCore.QEvent.MouseButtonDblClick:
-                self.__add_clips()
-                return True
-        return False
-
-    def __setup_rpa_menu(self, menu):
+    def __setup_rpa_mode_menus(self, menu):
         for action in menu.actions():
+
+            if action and action.text() == "File":
+                action.setText("File (rpa)")
+                sub_menu = action.menu()
+                sub_menu.clear()
+
+                action = QtWidgets.QAction("Add Clips", parent=self.__main_window)
+                action.setShortcut("Ctrl+O")
+                action.triggered.connect(self.__add_clips)
+                sub_menu.addAction(action)
+
+                action = QtWidgets.QAction("Save RPA Session            Ctrl+S", parent=self.__main_window)
+                action.triggered.connect(self.__save_rpa_session)
+                sub_menu.addAction(action)
+
+                action = QtWidgets.QAction("Append RPA Session", parent=self.__main_window)
+                action.triggered.connect(self.__append_rpa_session)
+                sub_menu.addAction(action)
+
+                action = QtWidgets.QAction("Replace RPA Session", parent=self.__main_window)
+                action.triggered.connect(self.__replace_rpa_session)
+                sub_menu.addAction(action)
+
             if action and action.text() == "Control":
                 sub_menu = action.menu()
                 sub_actions =  sub_menu.actions()[:]
@@ -182,7 +335,13 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
             if action and action.text() == "Tools":
                 sub_menu = action.menu()
                 sub_actions =  sub_menu.actions()[:]
+                action_to_insert_before = None
+                rpa_widgets_menu = None
                 for sub_action in sub_actions:
+                    if sub_action.text() == "RPA Widgets":
+                        rpa_widgets_menu = sub_action
+                    if sub_action.text() == "Timeline Magnifier":
+                        action_to_insert_before = sub_action
                     if sub_action.text() in [
                     "Default Views", "   Sequence", "   Replace", "   Over", "   Add",
                     "   Difference", "   Difference (Inverted)", "   Tile",
@@ -190,6 +349,10 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
                     "Session Manager", "Annotation", "Timeline"]:
                         sub_action.setShortcut("")
                         sub_menu.removeAction(sub_action)
+
+                if not rpa_widgets_menu:
+                    self.__setup_rpa_widgets_menu(
+                        sub_menu, action_to_insert_before)
 
             if action and action.text() == "Image":
                 sub_menu = action.menu()
@@ -202,123 +365,85 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
                         sub_menu.removeAction(sub_action)
 
             if action and action.text() in [
-            "File", "Edit", "RPA", "Annotation",
-            "Sequence", "Stack", "Layout", ]:
-                action_text = action.text()
+            "Edit", "Annotation", "Sequence", "Stack", "Layout"]:
                 menu.removeAction(action)
 
-                if action_text != "File": continue
+    def __setup_rpa_widgets_menu(self, parent_menu, action_to_insert_before):
+        rpa_widgets_menu = QtWidgets.QMenu("RPA Widgets", parent_menu)
 
-                if "File(rpa)" not in [action.text() for action in menu.actions()]:
-                    rpa_file_menu = QtWidgets.QMenu("File(rpa)", menu)
+        action = QtWidgets.QAction("Session Manager                X", parent=self.__main_window)
+        action.setShortcutContext(QtCore.Qt.ApplicationShortcut)
+        action.triggered.connect(self.__show_session_manager)
+        rpa_widgets_menu.addAction(action)
 
-                    action = QtWidgets.QAction("Add Clips", parent=self.__main_window)
-                    action.setShortcut("Ctrl+O")
-                    action.triggered.connect(self.__add_clips)
-                    rpa_file_menu.addAction(action)
+        action = QtWidgets.QAction("Background Modes", parent=self.__main_window)
+        action.triggered.connect(self.__show_background_modes)
+        rpa_widgets_menu.addAction(action)
 
-                    action = QtWidgets.QAction("Save RPA Session            Ctrl+S", parent=self.__main_window)
-                    action.triggered.connect(self.__save_rpa_session)
-                    rpa_file_menu.addAction(action)
+        action = QtWidgets.QAction("Annotation Tools", parent=self.__main_window)
+        action.triggered.connect(self.__show_annotation)
+        action.setShortcut("F10")
+        rpa_widgets_menu.addAction(action)
 
-                    action = QtWidgets.QAction("Append RPA Session", parent=self.__main_window)
-                    action.triggered.connect(self.__append_rpa_session)
-                    rpa_file_menu.addAction(action)
+        action = QtWidgets.QAction("Color Corrector", parent=self.__main_window)
+        action.triggered.connect(self.__show_color_corrector)
+        rpa_widgets_menu.addAction(action)
 
-                    action = QtWidgets.QAction("Replace RPA Session", parent=self.__main_window)
-                    action.triggered.connect(self.__replace_rpa_session)
-                    rpa_file_menu.addAction(action)
+        action = QtWidgets.QAction("Timeline                       F2", parent=self.__main_window)
+        action.triggered.connect(self.__show_timeline)
+        rpa_widgets_menu.addAction(action)
 
-                    action_to_insert_before = menu.actions()[1]
-                    menu.insertMenu(action_to_insert_before, rpa_file_menu)
+        action = QtWidgets.QAction("Media Path Overlay", parent=self.__main_window)
+        action.triggered.connect(self.__show_media_path_overlay)
+        rpa_widgets_menu.addAction(action)
 
-                if "Widgets(rpa)" not in [action.text() for action in menu.actions()]:
-                    rpa_file_menu = QtWidgets.QMenu("Widgets(rpa)", menu)
+        action = QtWidgets.QAction("Session Assistant", parent=self.__main_window)
+        action.triggered.connect(self.__show_session_assistant)
+        rpa_widgets_menu.addAction(action)
 
-                    action = QtWidgets.QAction("Session Manager            X", parent=self.__main_window)
-                    action.setShortcutContext(QtCore.Qt.ApplicationShortcut)
-                    action.triggered.connect(self.__show_session_manager)
-                    rpa_file_menu.addAction(action)
+        action = QtWidgets.QAction("RPA Interpreter", parent=self.__main_window)
+        action.triggered.connect(self.__show_rpa_interpreter)
+        rpa_widgets_menu.addAction(action)
 
-                    action = QtWidgets.QAction("Background Modes", parent=self.__main_window)
-                    action.triggered.connect(self.__show_background_modes)
-                    rpa_file_menu.addAction(action)
+        action = QtWidgets.QAction("Show FStop Slider ", parent=self.__main_window)
+        action.triggered.connect(self.__show_fstop_slider)
+        rpa_widgets_menu.addAction(action)
 
-                    action = QtWidgets.QAction("Annotation Tools", parent=self.__main_window)
-                    action.triggered.connect(self.__show_annotation)
-                    action.setShortcut("F10")
-                    rpa_file_menu.addAction(action)
+        action = QtWidgets.QAction("Show Gamma Slider ", parent=self.__main_window)
+        action.triggered.connect(self.__show_gamma_slider)
+        rpa_widgets_menu.addAction(action)
 
-                    action = QtWidgets.QAction("Color Corrector", parent=self.__main_window)
-                    action.triggered.connect(self.__show_color_corrector)
-                    rpa_file_menu.addAction(action)
+        action = QtWidgets.QAction("Show Rotation Slider ", parent=self.__main_window)
+        action.triggered.connect(self.__show_rotation_slider)
+        rpa_widgets_menu.addAction(action)
 
-                    action = QtWidgets.QAction("Timeline            F2", parent=self.__main_window)
-                    action.triggered.connect(self.__show_timeline)
-                    rpa_file_menu.addAction(action)
+        # action = QtWidgets.QAction("Test Session API", parent=self.__main_window)
+        # action.triggered.connect(self.__show_test_session_api)
+        # rpa_widgets_menu.addAction(action)
 
-                    action = QtWidgets.QAction("Media Path Overlay", parent=self.__main_window)
-                    action.triggered.connect(self.__show_media_path_overlay)
-                    rpa_file_menu.addAction(action)
+        # action = QtWidgets.QAction("Test Timeline API", parent=self.__main_window)
+        # action.triggered.connect(self.__show_test_timeline_api)
+        # rpa_widgets_menu.addAction(action)
 
-                    action = QtWidgets.QAction("Session Assistant", parent=self.__main_window)
-                    action.triggered.connect(self.__show_session_assistant)
-                    rpa_file_menu.addAction(action)
+        # action = QtWidgets.QAction("Test Annotation API", parent=self.__main_window)
+        # action.triggered.connect(self.__show_test_annotation_api)
+        # rpa_widgets_menu.addAction(action)
 
-                    action = QtWidgets.QAction("RPA Interpreter", parent=self.__main_window)
-                    action.triggered.connect(self.__show_rpa_interpreter)
-                    rpa_file_menu.addAction(action)
+        # action = QtWidgets.QAction("Test Color API", parent=self.__main_window)
+        # action.triggered.connect(self.__show_test_color_api)
+        # rpa_widgets_menu.addAction(action)
 
-                    # action = QtWidgets.QAction("Test Session API", parent=self.__main_window)
-                    # action.triggered.connect(self.__show_test_session_api)
-                    # rpa_file_menu.addAction(action)
+        # action = QtWidgets.QAction("Test Viewport API", parent=self.__main_window)
+        # action.triggered.connect(self.__show_test_viewport_api)
+        # rpa_widgets_menu.addAction(action)
 
-                    # action = QtWidgets.QAction("Test Timeline API", parent=self.__main_window)
-                    # action.triggered.connect(self.__show_test_timeline_api)
-                    # rpa_file_menu.addAction(action)
+        # action = QtWidgets.QAction("Test Delegate Manager", parent=self.__main_window)
+        # action.triggered.connect(self.__show_test_delegate_manager)
+        # rpa_widgets_menu.addAction(action)
 
-                    # action = QtWidgets.QAction("Test Annotation API", parent=self.__main_window)
-                    # action.triggered.connect(self.__show_test_annotation_api)
-                    # rpa_file_menu.addAction(action)
+        parent_menu.insertMenu(action_to_insert_before, rpa_widgets_menu)
 
-                    # action = QtWidgets.QAction("Test Color API", parent=self.__main_window)
-                    # action.triggered.connect(self.__show_test_color_api)
-                    # rpa_file_menu.addAction(action)
-
-                    # action = QtWidgets.QAction("Test Viewport API", parent=self.__main_window)
-                    # action.triggered.connect(self.__show_test_viewport_api)
-                    # rpa_file_menu.addAction(action)
-
-                    # action = QtWidgets.QAction("Test Delegate Manager", parent=self.__main_window)
-                    # action.triggered.connect(self.__show_test_delegate_manager)
-                    # rpa_file_menu.addAction(action)
-
-                    action_to_insert_before = menu.actions()[2]
-                    menu.insertMenu(action_to_insert_before, rpa_file_menu)
-
-        if menu is self.__main_window.menuBar():
-            openrv_action = menu.actions()[0]
-            openrv_action.setText("RPA Session - Open RV")
-
-    def __use_rpa_mode(self, event):        
-        msg_box = QtWidgets.QMessageBox()
-        msg_box.setIcon(QtWidgets.QMessageBox.Warning)
-        msg_box.setWindowTitle("Warning")
-        msg_box.setText(
-            "You are about to use an <b><u>Experimental</u> RPA Session</b> instead of RV Session in RV!<br><br><br>"\
-            "When you enter RPA mode the following happens,<br><br>"\
-            "1) Your current <span style='color:red'>RV Session will be cleared</span>.<br><br>"\
-            "2) Many <span style='color:red'>RV features/widgets will be replaced/disabled</span> to accomodate RPA Session.<br><br><br>"\
-            "Kindly <u>save your RV Session if needed</u> before proceeding!<br><br><br>"\
-            "Are you sure you want enter RPA Mode ?"
-        )
-        msg_box.setStandardButtons(
-            QtWidgets.QMessageBox.Ok|QtWidgets.QMessageBox.No)
-        result = msg_box.exec_()
-        if result == QtWidgets.QMessageBox.Ok:
-            self.__setup_rpa_session_mode()
-
-    def _save_rpa_session(self, event):        
+    def _save_rpa_session(self, event):
         self.__save_rpa_session()
 
     def __save_rpa_session(self):
@@ -330,7 +455,7 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
     def __replace_rpa_session(self):
         self.__session_io.replace_session_action.trigger()
 
-    def _add_clips(self, event):        
+    def _add_clips(self, event):
         self.__add_clips()
 
     def __add_clips(self):
@@ -353,7 +478,7 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
             index = clips.index(last_selected_clip) + 1
             self.__rpa.session_api.create_clips(fg_playlist, paths, index)
 
-    def _show_session_manager(self, event):        
+    def _show_session_manager(self, event):
         self.__show_session_manager()
 
     def __show_session_manager(self):
@@ -393,7 +518,7 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
             QtCore.Qt.RightDockWidgetArea, self.__session_assistant_dock)
         self.__session_assistant_dock.show()
 
-    def _show_timeline(self, event):        
+    def _show_timeline(self, event):
         self.__show_timeline()
 
     def __hide_rv_timeline(self):
@@ -415,7 +540,7 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
             return
         self.__timeline_toolbar = TimelineController(self.__rpa, self.__main_window)
 
-    def _show_annotation(self, event):        
+    def _show_annotation(self, event):
         self.__show_annotation()
 
     def __show_annotation(self):
@@ -441,6 +566,39 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
         self.__main_window.addDockWidget(
             QtCore.Qt.LeftDockWidgetArea, self.__annotation_dock)
         self.__annotation_dock.show()
+
+    def __show_fstop_slider(self):
+        if self.__image_controller:
+            if self.__image_controller.fstop_slider.isVisible():
+                self.__image_controller.fstop_slider.hide()
+            else:
+                self.__image_controller.fstop_slider.show()
+            return
+        self.__image_controller = ImageController(self.__rpa, self.__main_window)
+        self.__image_controller.gamma_slider.hide()
+        self.__image_controller.image_rot_slider.hide()
+
+    def __show_gamma_slider(self):
+        if self.__image_controller:
+            if self.__image_controller.gamma_slider.isVisible():
+                self.__image_controller.gamma_slider.hide()
+            else:
+                self.__image_controller.gamma_slider.show()
+            return
+        self.__image_controller = ImageController(self.__rpa, self.__main_window)
+        self.__image_controller.fstop_slider.hide()
+        self.__image_controller.image_rot_slider.hide()
+
+    def __show_rotation_slider(self):
+        if self.__image_controller:
+            if self.__image_controller.image_rot_slider.isVisible():
+                self.__image_controller.image_rot_slider.hide()
+            else:
+                self.__image_controller.image_rot_slider.show()
+            return
+        self.__image_controller = ImageController(self.__rpa, self.__main_window)
+        self.__image_controller.fstop_slider.hide()
+        self.__image_controller.gamma_slider.hide()
 
     def __show_color_corrector(self):
         if not self.__is_init_done(): return
@@ -619,57 +777,12 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
 
     def __is_init_done(self):
         if self.__main_window and self.__rpa: return True
-
-        elif self.__main_window and self.__rpa is None:
-
-            return True
+        elif self.__main_window and self.__rpa is None: return True
         return False
 
     def __toggle_dock_visibility(self, dock):
         if dock.isVisible(): dock.hide()
         else: dock.show()
-
-
-def create_config(main_window):
-    config = QtCore.QSettings("imageworks.com", "itview_5", main_window)
-    config.beginGroup("itview")
-    return config
-
-
-def create_logger():
-    if platform.system() == 'Windows':
-        log_dir = os.path.join(os.environ["APPDATA"], "itview")
-    elif platform.system() == 'Linux' or platform.system() == 'Darwin':
-        log_dir = os.path.join(os.environ["HOME"], ".itview")
-    else:
-        raise Exception("Unsupported platform!")
-
-    if not os.path.exists(log_dir):
-        os.mkdir(log_dir)
-    log_filepath = os.path.join(log_dir, "itview5.log")
-
-    itview5_logger = logging.getLogger("Itview5")
-    itview5_logger.setLevel(logging.DEBUG)
-    if not itview5_logger.handlers:
-        handler = RotatingFileHandler(
-            log_filepath, mode="a", maxBytes= 10 * 1024 * 1024, backupCount=5)
-        handler.setLevel(logging.DEBUG)
-        formatter = logging.Formatter(
-            "%(pathname)s %(funcName)s %(lineno)d:\n %(asctime)s %(levelname)s %(message)s\n",
-            datefmt="%Y-%m-%d %H:%M:%S")
-        handler.setFormatter(formatter)
-        itview5_logger.addHandler(handler)
-        itview5_logger.propagate = False
-    itview5_logger.info("[RPA] Itview5 Logger Created")
-    return itview5_logger
-
-
-class DockWidget(QtWidgets.QDockWidget):
-    def __init__(self, title , parent):
-        super().__init__(title, parent)
-        self.setFeatures(
-            QtWidgets.QDockWidget.DockWidgetClosable | \
-            QtWidgets.QDockWidget.DockWidgetMovable)
 
 
 def createMode():

@@ -439,6 +439,23 @@ class ViewportApiCore(QtCore.QObject):
     def get_translation(self):
         return prop_util.get_property("#RVDispTransform2D.transform.translate")[0]
 
+    def set_rotation(self, angle):
+        self.__session.viewport.rotation = angle
+        groups = rvc.nodesOfType("RVViewPipelineGroup")
+        if not len(groups): return False
+        for group in groups:
+            nodes = rvc.getStringProperty(group + ".pipeline.nodes")
+            if not ("RVTransform2D" in nodes):
+                nodes += ["RVTransform2D"]
+                rvc.setStringProperty(group + ".pipeline.nodes", nodes, True)
+            nodes = rvc.closestNodesOfType("RVTransform2D", group)
+            for node in nodes:
+                rvc.setFloatProperty(node + ".transform.rotate", [float(angle)], True)
+        return True
+
+    def get_rotation(self):
+        return self.__session.viewport.rotation
+
     def set_mask(self, mask):
         self.__unload_mask()
 

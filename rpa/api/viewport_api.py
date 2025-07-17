@@ -297,6 +297,29 @@ class ViewportApi(QtCore.QObject):
         """
         return self.__delegate_mngr.call(self.get_translation)
 
+    def set_rotation(self, angle:int)->bool:
+        """
+        Set the rotation angle of all the media in the viewport. 
+        Angle can be anywhere between -360 to +360.
+
+        Args:
+            angle (int): Rotation angle
+
+        Returns:
+            (bool) : True if success False otherwise
+        """
+        return self.__delegate_mngr.call(
+            self.set_rotation, [angle])
+
+    def get_rotation(self)-> List[float]:
+        """
+        Get the rotation angle of all the media in the viewport.
+
+        Returns:
+            int: Rotation angle.
+        """
+        return self.__delegate_mngr.call(self.get_rotation)
+
     def flip_x(self, state:bool)->bool:
         """
         Flip the current view horizontally or default to original view,

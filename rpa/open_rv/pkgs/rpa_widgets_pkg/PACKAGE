@@ -15,4 +15,4 @@ modes:
     load: immediate
 
 description:
-    <p>Loader of RPA Widgets</p>
+    <p>Provide option to use RPA widgets in OpenRV.</p>
