@@ -1,8 +1,11 @@
 import os
 try:
     from PySide2 import QtCore, QtWidgets
+    from PySide2.QtWidgets import QAction
 except ImportError:
     from PySide6 import QtCore, QtWidgets
+    from PySide6.QtGui import QAction
+
 from rv import rvtypes, commands, runtime
 import rv.qtutils
 import platform
@@ -169,7 +172,7 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
                 quit_open_rv_action = action
 
         if switch_mode_action is None:
-            action = QtWidgets.QAction("Switch to RPA", parent=self.__main_window)
+            action = QAction("Switch to RPA", parent=self.__main_window)
             action.triggered.connect(self.__switch_mode)
             action.setProperty("is_rpa_switch_action", True)
             menu.insertAction(quit_open_rv_action, action)
@@ -305,20 +308,20 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
                 sub_menu = action.menu()
                 sub_menu.clear()
 
-                action = QtWidgets.QAction("Add Clips", parent=self.__main_window)
+                action = QAction("Add Clips", parent=self.__main_window)
                 action.setShortcut("Ctrl+O")
                 action.triggered.connect(self.__add_clips)
                 sub_menu.addAction(action)
 
-                action = QtWidgets.QAction("Save RPA Session            Ctrl+S", parent=self.__main_window)
+                action = QAction("Save RPA Session            Ctrl+S", parent=self.__main_window)
                 action.triggered.connect(self.__save_rpa_session)
                 sub_menu.addAction(action)
 
-                action = QtWidgets.QAction("Append RPA Session", parent=self.__main_window)
+                action = QAction("Append RPA Session", parent=self.__main_window)
                 action.triggered.connect(self.__append_rpa_session)
                 sub_menu.addAction(action)
 
-                action = QtWidgets.QAction("Replace RPA Session", parent=self.__main_window)
+                action = QAction("Replace RPA Session", parent=self.__main_window)
                 action.triggered.connect(self.__replace_rpa_session)
                 sub_menu.addAction(action)
 
@@ -371,73 +374,73 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
     def __setup_rpa_widgets_menu(self, parent_menu, action_to_insert_before):
         rpa_widgets_menu = QtWidgets.QMenu("RPA Widgets", parent_menu)
 
-        action = QtWidgets.QAction("Session Manager                X", parent=self.__main_window)
+        action = QAction("Session Manager                X", parent=self.__main_window)
         action.setShortcutContext(QtCore.Qt.ApplicationShortcut)
         action.triggered.connect(self.__show_session_manager)
         rpa_widgets_menu.addAction(action)
 
-        action = QtWidgets.QAction("Background Modes", parent=self.__main_window)
+        action = QAction("Background Modes", parent=self.__main_window)
         action.triggered.connect(self.__show_background_modes)
         rpa_widgets_menu.addAction(action)
 
-        action = QtWidgets.QAction("Annotation Tools", parent=self.__main_window)
+        action = QAction("Annotation Tools", parent=self.__main_window)
         action.triggered.connect(self.__show_annotation)
         action.setShortcut("F10")
         rpa_widgets_menu.addAction(action)
 
-        action = QtWidgets.QAction("Color Corrector", parent=self.__main_window)
+        action = QAction("Color Corrector", parent=self.__main_window)
         action.triggered.connect(self.__show_color_corrector)
         rpa_widgets_menu.addAction(action)
 
-        action = QtWidgets.QAction("Timeline                       F2", parent=self.__main_window)
+        action = QAction("Timeline                       F2", parent=self.__main_window)
         action.triggered.connect(self.__show_timeline)
         rpa_widgets_menu.addAction(action)
 
-        action = QtWidgets.QAction("Media Path Overlay", parent=self.__main_window)
+        action = QAction("Media Path Overlay", parent=self.__main_window)
         action.triggered.connect(self.__show_media_path_overlay)
         rpa_widgets_menu.addAction(action)
 
-        action = QtWidgets.QAction("Session Assistant", parent=self.__main_window)
+        action = QAction("Session Assistant", parent=self.__main_window)
         action.triggered.connect(self.__show_session_assistant)
         rpa_widgets_menu.addAction(action)
 
-        action = QtWidgets.QAction("RPA Interpreter", parent=self.__main_window)
+        action = QAction("RPA Interpreter", parent=self.__main_window)
         action.triggered.connect(self.__show_rpa_interpreter)
         rpa_widgets_menu.addAction(action)
 
-        action = QtWidgets.QAction("Show FStop Slider ", parent=self.__main_window)
+        action = QAction("Show FStop Slider ", parent=self.__main_window)
         action.triggered.connect(self.__show_fstop_slider)
         rpa_widgets_menu.addAction(action)
 
-        action = QtWidgets.QAction("Show Gamma Slider ", parent=self.__main_window)
+        action = QAction("Show Gamma Slider ", parent=self.__main_window)
         action.triggered.connect(self.__show_gamma_slider)
         rpa_widgets_menu.addAction(action)
 
-        action = QtWidgets.QAction("Show Rotation Slider ", parent=self.__main_window)
+        action = QAction("Show Rotation Slider ", parent=self.__main_window)
         action.triggered.connect(self.__show_rotation_slider)
         rpa_widgets_menu.addAction(action)
 
-        # action = QtWidgets.QAction("Test Session API", parent=self.__main_window)
+        # action = QAction("Test Session API", parent=self.__main_window)
         # action.triggered.connect(self.__show_test_session_api)
         # rpa_widgets_menu.addAction(action)
 
-        # action = QtWidgets.QAction("Test Timeline API", parent=self.__main_window)
+        # action = QAction("Test Timeline API", parent=self.__main_window)
         # action.triggered.connect(self.__show_test_timeline_api)
         # rpa_widgets_menu.addAction(action)
 
-        # action = QtWidgets.QAction("Test Annotation API", parent=self.__main_window)
+        # action = QAction("Test Annotation API", parent=self.__main_window)
         # action.triggered.connect(self.__show_test_annotation_api)
         # rpa_widgets_menu.addAction(action)
 
-        # action = QtWidgets.QAction("Test Color API", parent=self.__main_window)
+        # action = QAction("Test Color API", parent=self.__main_window)
         # action.triggered.connect(self.__show_test_color_api)
         # rpa_widgets_menu.addAction(action)
 
-        # action = QtWidgets.QAction("Test Viewport API", parent=self.__main_window)
+        # action = QAction("Test Viewport API", parent=self.__main_window)
         # action.triggered.connect(self.__show_test_viewport_api)
         # rpa_widgets_menu.addAction(action)
 
-        # action = QtWidgets.QAction("Test Delegate Manager", parent=self.__main_window)
+        # action = QAction("Test Delegate Manager", parent=self.__main_window)
         # action.triggered.connect(self.__show_test_delegate_manager)
         # rpa_widgets_menu.addAction(action)
 

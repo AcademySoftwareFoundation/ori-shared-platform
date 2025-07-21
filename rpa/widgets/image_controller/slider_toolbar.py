@@ -1,4 +1,7 @@
-from PySide2 import QtGui, QtCore, QtWidgets
+try:
+    from PySide2 import QtCore, QtGui, QtWidgets
+except ImportError:
+    from PySide6 import QtGui, QtCore, QtWidgets
 import rpa.widgets.image_controller.resources.resources
 
 

@@ -1,8 +1,10 @@
 import json
 try:
     from PySide2 import QtCore, QtWidgets, QtGui
+    from PySide2.QtWidgets import QShortcut
 except ImportError:
     from PySide6 import QtCore, QtWidgets, QtGui
+    from PySide6.QtGui import QShortcut
 from rpa.widgets.timeline.view.range import TimelineRange
 from rpa.widgets.timeline.view.actions import Actions
 from rpa.widgets.timeline.view.slider import TimelineSlider
@@ -64,15 +66,15 @@ class TimelineController(QtWidgets.QToolBar):
 
         self.__main_window.addToolBar(QtCore.Qt.BottomToolBarArea, self)
 
-        copy_shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+C"), self.__slider)
+        copy_shortcut = QShortcut(QtGui.QKeySequence("Ctrl+C"), self.__slider)
         copy_shortcut.setContext(QtCore.Qt.WidgetShortcut)
         copy_shortcut.activated.connect(self.__copy_annotations)
 
-        cut_shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+X"), self.__slider)
+        cut_shortcut = QShortcut(QtGui.QKeySequence("Ctrl+X"), self.__slider)
         cut_shortcut.setContext(QtCore.Qt.WidgetShortcut)
         cut_shortcut.activated.connect(self.__cut_annotations)
 
-        paste_shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+V"), self.__slider)
+        paste_shortcut = QShortcut(QtGui.QKeySequence("Ctrl+V"), self.__slider)
         paste_shortcut.setContext(QtCore.Qt.WidgetShortcut)
         paste_shortcut.activated.connect(self.__paste_annotations)
 
