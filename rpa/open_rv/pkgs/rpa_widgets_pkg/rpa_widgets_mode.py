@@ -251,27 +251,18 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
 
         commands.unbind("default", "global", 'key-down--control--S')
         commands.unbind("default", "global", 'key-down--control--s')
-        commands.bind("default", "global", 'key-down--control--s', self._save_rpa_session, "Save RPA Session")
 
         commands.unbind("default", "global", 'key-down--control--o')
-        commands.bind("default", "global", 'key-down--control--o', self._add_clips, "Add clips to FG playlist")
 
         commands.unbind("default", "global", 'mode-manager-toggle-mode')
-        commands.unbind("default", "global", 'key-down--x')
-        commands.bind("default", "global", 'key-down--x', self._show_session_manager, "Show/Hide RPA Session Manager")
-
         commands.unbind("default", "global", 'session-manager-load-ui')
-        commands.unbind("default", "global", 'key-down--X')
-        commands.bind("default", "global", 'key-down--X', self._show_session_manager, "Show/Hide RPA Session Manager")
+        commands.unbind("default", "global", 'key-down--x')
 
         commands.unbind("default", "global", 'toggle-draw-panel')
-        commands.bind("default", "global", 'toggle-draw-panel', self._show_annotation, "Show Annotation Tools")
         commands.unbind("default", "global", 'key-down--f10')
-        commands.bind("default", "global", 'key-down--f10', self._show_annotation, "Show Annotation Tools")
 
         commands.unbind("default", "global", 'key-down--~')
         commands.unbind("default", "global", 'key-down--f2')
-        commands.bind("default", "global", 'key-down--f2', self._show_timeline, "Show Timeline")
 
         self.__viewport_widget.installEventFilter(self)
 
@@ -313,7 +304,8 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
                 action.triggered.connect(self.__add_clips)
                 sub_menu.addAction(action)
 
-                action = QAction("Save RPA Session            Ctrl+S", parent=self.__main_window)
+                action = QAction("Save RPA Session", parent=self.__main_window)
+                action.setShortcut("Ctrl+S")
                 action.triggered.connect(self.__save_rpa_session)
                 sub_menu.addAction(action)
 
@@ -374,7 +366,8 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
     def __setup_rpa_widgets_menu(self, parent_menu, action_to_insert_before):
         rpa_widgets_menu = QtWidgets.QMenu("RPA Widgets", parent_menu)
 
-        action = QAction("Session Manager                X", parent=self.__main_window)
+        action = QAction("Session Manager", parent=self.__main_window)
+        action.setShortcut("x")
         action.setShortcutContext(QtCore.Qt.ApplicationShortcut)
         action.triggered.connect(self.__show_session_manager)
         rpa_widgets_menu.addAction(action)
@@ -392,7 +385,8 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
         action.triggered.connect(self.__show_color_corrector)
         rpa_widgets_menu.addAction(action)
 
-        action = QAction("Timeline                       F2", parent=self.__main_window)
+        action = QAction("Timeline", parent=self.__main_window)
+        action.setShortcut("F2")
         action.triggered.connect(self.__show_timeline)
         rpa_widgets_menu.addAction(action)
 

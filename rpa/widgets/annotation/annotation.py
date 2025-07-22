@@ -356,9 +356,10 @@ class Annotation(QtCore.QObject):
                     point=point)
                 self.__annotation_api.set_pointer(stroke_point)
 
-        interactive_mode = self.__interactive_mode
-        if interactive_mode is None:
-            return False
+        interactive_mode = self.__session_api.get_custom_session_attr(
+            C.MODIFIER_INTERACTIVE_MODE)
+        if interactive_mode is None: interactive_mode = self.__interactive_mode
+        if interactive_mode is None: return False
 
         is_line = interactive_mode in (C.INTERACTIVE_MODE_LINE, C.INTERACTIVE_MODE_MULTI_LINE)
 
