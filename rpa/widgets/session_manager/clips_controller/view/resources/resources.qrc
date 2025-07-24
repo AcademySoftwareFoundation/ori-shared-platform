@@ -1,0 +1,9 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource>
+        <file>./column_popdown.png</file>
+        <file>./editable32.png</file>
+        <file>./blank.png</file>
+        <file>./curclip.png</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,29 @@
+from rpa.open_rv.rpa_core.api.clip_attr_api_core.clip_attrs import \
+    clip_attr_audio_fps, \
+    clip_attr_audio_offset, \
+    clip_attr_audio_path, \
+    clip_attr_audio_type, \
+    clip_attr_cut_length, \
+    clip_attr_dynamic_rotation, \
+    clip_attr_dynamic_scale_x, \
+    clip_attr_dynamic_scale_y, \
+    clip_attr_dynamic_translate_x, \
+    clip_attr_dynamic_translate_y, \
+    clip_attr_flip_x, \
+    clip_attr_flip_y, \
+    clip_attr_grayscale, \
+    clip_attr_key_in, \
+    clip_attr_key_out, \
+    clip_attr_length_diff, \
+    clip_attr_media_end_frame, \
+    clip_attr_media_fps, \
+    clip_attr_media_length, \
+    clip_attr_media_path, \
+    clip_attr_media_start_frame, \
+    clip_attr_media_type, \
+    clip_attr_resolution, \
+    clip_attr_rotation, \
+    clip_attr_scale_x, \
+    clip_attr_scale_y, \
+    clip_attr_translate_x, \
+    clip_attr_translate_y

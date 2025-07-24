@@ -7,7 +7,7 @@ Here you will find a growing collection of code meant to be leveraged across our
 
 Currently in this repository:
 
-  The **Review Plugin API** is a proof of concept API and widget collection for building cross-platform plugins for review/playback systems (like Itview, OpenRV, xStudio etc).
+  The **rpa (Review Plugin API)** is a collection of API modules and widgets for building cross-platform plugins for review/playback systems (like Itview, OpenRV, xStudio etc).
 
 For more information about our initiative itself and its projects please see http://aswf.io/openreviewinitiative
 

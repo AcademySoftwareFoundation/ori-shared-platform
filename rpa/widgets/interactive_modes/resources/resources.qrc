@@ -1,0 +1,13 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource>
+        <file>./rectangle.png</file>
+        <file>./ellipse.png</file>
+        <file>./lasso.png</file>
+        <file>./line.png</file>
+        <file>./multiline.png</file>
+        <file>./hand.png</file>
+        <file>./transforms.png</file>
+        <file>./transforms_dynamic.png</file>
+    </qresource>
+</RCC>

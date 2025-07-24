@@ -1,0 +1,9 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource>
+        <file>./fg_playlist.png</file>
+        <file>./bg_playlist.png</file>
+        <file>./reg_playlist.png</file>
+        <file>./off_playlist.png</file>
+    </qresource>
+</RCC>
