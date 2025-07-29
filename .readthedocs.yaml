@@ -9,7 +9,6 @@ build:
   os: ubuntu-24.04
   tools:
     python: "3.11"
-    sphinx: "8.2.3" 
   commands:
     - pip install -r rpa/docs/requirements.txt  # For some reason, rtd doesn't install requirements.txt automatically
     - make -C rpa/docs html  # Use your Makefile to build docs
