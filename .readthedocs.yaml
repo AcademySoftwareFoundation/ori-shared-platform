@@ -12,6 +12,8 @@ build:
   commands:
     - pip install -r rpa/docs/requirements.txt  # For some reason, rtd doesn't install requirements.txt automatically
     - make -C rpa/docs html  # Use your Makefile to build docs
+    - mkdir -p $READTHEDOCS_OUTPUT/html
+    - cp -r rpa/docs/build/html/* $READTHEDOCS_OUTPUT/html/
 
 # # Build documentation in the "docs/" directory with Sphinx
 # sphinx:
