@@ -18,7 +18,7 @@ class ToolBar(QtWidgets.QToolBar):
         self.addSeparator()
 
         self.addAction(self.__actions.color)
-
+        self.addAction(self.__actions.toggle_eye_dropper)
         self.addSeparator()
 
         self.addAction(self.__actions.show_annotations)

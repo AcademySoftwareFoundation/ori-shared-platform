@@ -3,7 +3,6 @@ try:
 except ImportError:
     from PySide6 import QtCore, QtGui, QtWidgets
 
-
 class EyeDropper(QtWidgets.QWidget):
     SIG_EYE_DROPPER_ENABLED = QtCore.Signal(bool)
     SIG_EYE_DROPPER_SIZE_NAME_CHANGED = QtCore.Signal(str)
@@ -18,12 +17,10 @@ class EyeDropper(QtWidgets.QWidget):
             QtGui.QIcon(QtGui.QPixmap(':dropper16.png'))
             )
         self.__eye_drop_button.setIconSize(QtCore.QSize(30, 30))
-        self.__eye_drop_button.setVisible(False)
 
         self.__sample_size = QtWidgets.QComboBox()
         self.__sample_size.setToolTip('Set eye dropper sample size')
         self.__sample_size.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.__sample_size.setVisible(False)
 
         layout = QtWidgets.QHBoxLayout()
         layout.addWidget(self.__eye_drop_button)

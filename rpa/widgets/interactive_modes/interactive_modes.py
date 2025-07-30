@@ -108,20 +108,20 @@ class InteractiveModes(QtCore.QObject):
         self.__move_mode.toggled.connect(
             lambda is_checked: set_interactive_mode(C.INTERACTIVE_MODE_MOVE if is_checked else None))
 
-        self.__transform_mode = QAction("Transform Mode")
-        self.__transform_mode.setCheckable(True)
-        self.__transform_mode.setIcon(
+        self.transform_mode = QAction("Transform Mode")
+        self.transform_mode.setCheckable(True)
+        self.transform_mode.setIcon(
                 QtGui.QIcon(QtGui.QPixmap(":transforms.png")))
-        self.__transform_mode.setToolTip("Transform Mode\nLMB: Pan\nMMB: Rotate\nRMB: Zoom")
-        self.__transform_mode.toggled.connect(
+        self.transform_mode.setToolTip("Transform Mode\nLMB: Pan\nMMB: Rotate\nRMB: Zoom")
+        self.transform_mode.toggled.connect(
             lambda is_checked: set_interactive_mode(C.INTERACTIVE_MODE_TRANSFORM if is_checked else None))
 
-        self.__dynamic_transform_mode = QAction("Dynamic Transform Mode")
-        self.__dynamic_transform_mode.setCheckable(True)
-        self.__dynamic_transform_mode.setIcon(
+        self.dynamic_transform_mode = QAction("Dynamic Transform Mode")
+        self.dynamic_transform_mode.setCheckable(True)
+        self.dynamic_transform_mode.setIcon(
                 QtGui.QIcon(QtGui.QPixmap(":transforms_dynamic.png")))
-        self.__dynamic_transform_mode.setToolTip("Dynamic Transform Mode\nLMB: Pan\nMMB: Rotate\nRMB: Zoom")
-        self.__dynamic_transform_mode.toggled.connect(
+        self.dynamic_transform_mode.setToolTip("Dynamic Transform Mode\nLMB: Pan\nMMB: Rotate\nRMB: Zoom")
+        self.dynamic_transform_mode.toggled.connect(
             lambda is_checked: set_interactive_mode(C.INTERACTIVE_MODE_DYNAMIC_TRANSFORM if is_checked else None))
 
     def __create_toolbar(self):
@@ -129,8 +129,8 @@ class InteractiveModes(QtCore.QObject):
         self.tool_bar.setWindowTitle("Interactive Toolbar")
         self.tool_bar.setObjectName(self.tool_bar.windowTitle())
 
-        self.tool_bar.addAction(self.__transform_mode)
-        self.tool_bar.addAction(self.__dynamic_transform_mode)
+        self.tool_bar.addAction(self.transform_mode)
+        self.tool_bar.addAction(self.dynamic_transform_mode)
 
         self.tool_bar.addSeparator()
 
@@ -207,11 +207,11 @@ class InteractiveModes(QtCore.QObject):
             self.__move_mode.blockSignals(True)
             self.__move_mode.toggle()
             self.__move_mode.blockSignals(False)
-        if self.__transform_mode.isChecked() != (mode == C.INTERACTIVE_MODE_TRANSFORM):
-            self.__transform_mode.blockSignals(True)
-            self.__transform_mode.toggle()
-            self.__transform_mode.blockSignals(False)
-        if self.__dynamic_transform_mode.isChecked() != (mode == C.INTERACTIVE_MODE_DYNAMIC_TRANSFORM):
-            self.__dynamic_transform_mode.blockSignals(True)
-            self.__dynamic_transform_mode.toggle()
-            self.__dynamic_transform_mode.blockSignals(False)
+        if self.transform_mode.isChecked() != (mode == C.INTERACTIVE_MODE_TRANSFORM):
+            self.transform_mode.blockSignals(True)
+            self.transform_mode.toggle()
+            self.transform_mode.blockSignals(False)
+        if self.dynamic_transform_mode.isChecked() != (mode == C.INTERACTIVE_MODE_DYNAMIC_TRANSFORM):
+            self.dynamic_transform_mode.blockSignals(True)
+            self.dynamic_transform_mode.toggle()
+            self.dynamic_transform_mode.blockSignals(False)

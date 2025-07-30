@@ -9,7 +9,7 @@ RPA is an abstraction layer between the review widgets you create and the review
 
 ## Documentation:
 
-[RPA Documentation](https://mariapanneerrajan-spi.github.io/ori-shared-platform/index.html)
+[RPA Documentation](https://ori-shared-platform.readthedocs.io/en/latest/)
 
 ## Contents:
 
@@ -74,17 +74,18 @@ While in RPA Session mode, in the main Menu Bar, you can find all the RPA widget
 
 `Tools -> RPA Widgets`.
 
-## Docs Publish Workflow:
+## Read the Docs Publish Workflow:
 
-1. If you want to update the static documentation you can update the RST files here,
+1. If you want to update the documentation you can update the sphinx source here,
 `>> ./rpa/docs/source`
 
-2. If you want to update the dynamic documenation that is pulled from source-code, run the following command,
+2. If you want to build and locally test your documentation you can run the following commands,
 `>> cd ./rpa/docs; make clean; make html`
 
-3. For github pages to host the documentaiton move the contents of the ./rpa/docs/build/html folder to the ./docs folder in the root level of rpa.
+3. Kindly make sure to remove your `>> ./rpa/docs/build` directory before pushing.
 
-4. To not use any formating from Github's .nojekyll, add an empty file called,
-`>> touch ./docs/.nojekyll`
+3. Update the following read the docs config file if needed,
+`./.readthedocs.yaml`
 
-5. Now when you push to main, the html docs under ./docs will be hosted as github pages.
+5. Now when you push to main, your sphinx html documention will be generated and publised to,
+**[https://ori-shared-platform.readthedocs.io/en/latest/](https://ori-shared-platform.readthedocs.io/en/latest/)**

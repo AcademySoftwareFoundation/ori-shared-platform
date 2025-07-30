@@ -85,14 +85,6 @@ def delete_property(prop):
     """
     set_property(prop, [])
 
-def get_default_start_end_frame(source_node):
-    smi = rvc.sourceMediaInfo(source_node)
-    if smi:
-        start = int(smi.get("startFrame"))
-        end = int(smi.get("endFrame"))
-        return start, end
-    return None, None
-
 def convert_frame(frame, source_node):
     """ Function that helps convert source_frame to 1....n range.
         This is done as RVPaint node recognizes only such range,

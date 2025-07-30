@@ -35,6 +35,14 @@ class Actions(QtCore.QObject):
 
         self.__create_size_setters()
 
+        self.toggle_eye_dropper = QAction("Eye Dropper")
+        self.toggle_eye_dropper.setCheckable(True)
+        self.toggle_eye_dropper.setChecked(False)
+        self.toggle_eye_dropper.setIcon(
+            QtGui.QIcon(QtGui.QPixmap(':dropper16.png'))
+        )
+        self.toggle_eye_dropper.setToolTip("Eye Dropper")
+
         self.show_annotations = QAction("Toggle visibility")
         self.show_annotations.setCheckable(True)
         self.show_annotations.setChecked(False)

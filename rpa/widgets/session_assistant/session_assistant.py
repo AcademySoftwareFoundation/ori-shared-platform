@@ -134,8 +134,15 @@ class SessionAssistant(QtCore.QObject):
 
     def __set_new_key(self, clip_id:str, attr_id:str):
         playlist_id = self.__session_api.get_playlist_of_clip(clip_id)
-        cur_frame = self.__timeline_api.get_current_frame()
-        start, end = self.__timeline_api.get_default_start_end_frame()
+        start = self.__session_api.get_attr_value(clip_id, "media_start_frame")
+        end = self.__session_api.get_attr_value(clip_id, "media_end_frame")
+
+        cur_seq_frame = self.__timeline_api.get_current_frame()
+        clip_frame_data = self.__timeline_api.get_clip_frames([cur_seq_frame])
+        if clip_frame_data:
+            clip_id_at_clip_frame, cur_clip_frame = clip_frame_data[0]
+            if clip_id_at_clip_frame != clip_id: 
+                return
 
         if attr_id == "key_in":
             comparison_key = start
@@ -144,7 +151,7 @@ class SessionAssistant(QtCore.QObject):
         else:
             return
 
-        if cur_frame == comparison_key:
+        if cur_clip_frame == comparison_key:
             return
 
         cur_key = \
@@ -154,11 +161,20 @@ class SessionAssistant(QtCore.QObject):
             new_key = start
         elif cur_key > end:
             new_key = end
-        elif cur_frame == cur_key:
+        elif cur_clip_frame == cur_key:
             new_key = comparison_key
         else:
-            new_key = cur_frame
+            new_key = cur_clip_frame
 
         self.__session_api.set_attr_values(
             [(playlist_id, clip_id, attr_id, new_key)])
-        self.__timeline_api.set_frame(playlist_id, clip_id, cur_frame)
+
+        if attr_id == "key_in":
+            goto_frame = 1
+        elif attr_id == "key_out":
+            seq_frame = self.__timeline_api.get_seq_frames(clip_id, [new_key])
+            goto_frame = seq_frame[0] if seq_frame else 1
+        else:
+            return
+        
+        self.__timeline_api.goto_frame(goto_frame)

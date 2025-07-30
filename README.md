@@ -7,7 +7,16 @@ Here you will find a growing collection of code meant to be leveraged across our
 
 Currently in this repository:
 
-  The **rpa (Review Plugin API)** is a collection of API modules and widgets for building cross-platform plugins for review/playback systems (like Itview, OpenRV, xStudio etc).
+## RPA (Review Plugin API)
+
+To empower VFX and Animation studios to use their custom built review workflows and tools across any review-playback system (such as OpenRV or xStudio), RPA provides a unified collection of API modules and widgets.
+
+RPA is designed for pipeline developers to build their review workflows and tools once and deploy them seamlessly across any review-playback system that supports the RPA implementation.
+
+RPA is an abstraction layer between the review widgets you create and the review-playback systems you use.
+
+**[RPA Documentation](https://ori-shared-platform.readthedocs.io/en/latest/)**
+
 
 For more information about our initiative itself and its projects please see http://aswf.io/openreviewinitiative
 

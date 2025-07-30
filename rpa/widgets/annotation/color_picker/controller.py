@@ -86,7 +86,8 @@ class Controller(object):
         :type size: int
         """
         self.__model.set_eye_dropper_sample_size(size)
-        self.__view.set_eye_dropper_sample_size(self.__model.get_eye_dropper_sample_size_index())
+        self.__view.set_eye_dropper_sample_size(self.__model.get_eye_dropper_sample_size_index(),
+                                                size)
 
     def get_eye_dropper_sample_size(self):
         """ Return the current eye dropper sample size.
@@ -105,7 +106,8 @@ class Controller(object):
         value = self.__model.get_eye_dropper_sample_size_from_name(size_name)
         self.__model.set_eye_dropper_sample_size(value)
         self.SIG_EYE_DROPPER_SIZE_CHANGED.emit(self.__model.get_eye_dropper_sample_size())
-        self.__view.set_eye_dropper_sample_size(self.__model.get_eye_dropper_sample_size_index())
+        self.__view.set_eye_dropper_sample_size(self.__model.get_eye_dropper_sample_size_index(),
+                                                self.__model.get_eye_dropper_sample_size())
 
     def get_eye_dropper_sample_size_names(self):
         """ Return the names of eye dropper sample sizes.
@@ -124,6 +126,7 @@ class Controller(object):
         if not self.__model.set_current_color(rgb.get_copy()):
             return False
         self.__view.set_current_color(self.__model.get_current_color())
+        self.__view.set_recent_colors(self.__model.get_recent_colors())
         return True
 
     def get_current_color(self):
