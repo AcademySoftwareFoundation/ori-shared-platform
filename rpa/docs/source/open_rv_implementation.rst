@@ -1,5 +1,5 @@
-Open RV Implmentation
-=====================
+Open RV Implementation
+======================
 
 .. contents::
    :local:
@@ -58,13 +58,13 @@ In the RPA repository, the RV Package responsible for adding all available RPA w
 ---------
 RPA Mode:
 ---------
-Since RPA has its own Session that works on top of the RV Session, using RV widgets that directly manipulate the RV Session without going through the RPA Session will cause unexpected behavior. So this RV Package, adds a menu in RV's main menu-bar called **RPA Mode**.
+Since RPA has its own Session that works on top of the RV Session, using RV widgets that directly manipulate the RV Session without going through the RPA Session will cause unexpected behavior. So this RV Package, adds a menu in RV's main menu-bar called **Open RV -> Switch to RPA**.
 
 .. image:: _static/rpa_mode.png
    :alt: RPA Mode Menu in RV
    :align: center
 
-By default RPA mode is not enabled so that you can continue to use all RV Session features without any interference from RPA Session. When you are want to use RPA Session with all the RPA widgets, you can enable RPA Mode by clicking on the **RPA Mode** menu in the main menu-bar of RV.
+By default RPA mode is not enabled so that you can continue to use all RV Session features without any interference from RPA Session. When you are want to use RPA Session with all the RPA widgets, you can enable RPA Mode by clicking on the **Open RV -> Switch to RPA** menu in the main menu-bar of RV.
 
 When you enter RPA mode your current RV Session will be cleared and many RV features/widgets will be replaced/disabled to accommodate RPA Session. So make sure to save your RV Session if needed before proceeding.
 
@@ -94,44 +94,40 @@ Widgets Replaced:
 ~~~~~~~~~~~~~~
 Menus Removed:
 ~~~~~~~~~~~~~~
-
 - **File**
 - **Edit**
 - **Annotation**
 - **Sequence**
 - **Stack**
 - **Layout**
-- **Control**:
-  
-  - Next Marked Frame
-  - Prev Marked Frame
-  - Matching Frame Of Next Source
-  - Matching Frame Of Previous Source
-
-- **Tools**:
-  
-  - Default Views
-  - Sequence
-  - Replace
-  - Over
-  - Add
-  - Difference
-  - Different (Inverted)
-  - Title
-  - Menu Bar
-  - Top View Toolbar
-  - Bottom View Toolbar
-  - Session Manager
-  - Annotation
-  - Timeline
-
-- **Image**:
-  
-  - Rotation
-  - Flip
-  - Flop
-  - Cycle Stack Forward
-  - Cycle Stack Backward
+- **Control**
+   - Next Marked Frame
+   - Prev Marked Frame
+   - Matching Frame Of Next Source
+   - Matching Frame Of Previous Source
+- **Tools**
+   - Default Views
+   - Sequence
+   - Replace
+   - Over
+   - Add
+   - Difference
+   - Different (Inverted)
+   - Title
+   - Menu Bar
+   - Top View Toolbar
+   - Bottom View Toolbar
+   - Session Manager
+   - Annotation
+   - Timeline
+- **Image**
+   - Rotation
+   - Flip
+   - Flop
+   - Cycle Stack Forward
+   - Cycle Stack Backward
+- Right clicking on the viewport will not show the RV context menu.
+- Middle-Mouse-Click & drag will not translate the viewport. You can use Middle-Mouse-Click with Alt modifier and drag to do this instead.
 
 ~~~~~~~~~~~~
 Menus Added:
@@ -141,8 +137,7 @@ Menus Added:
    - Save RPA Session
    - Append Save RPA Session
    - Replace Save RPA Session
-
-- **Widgets(rpa)**
+- **Tools->RPA Widgets**
    - Session Manager
    - Background Modes
    - Annotation Tools
@@ -151,8 +146,26 @@ Menus Added:
    - Media Path Overlay
    - Session Assistant
    - RPA Interpreter
+   - Show FStop Slider
+   - Show Gamma Slider
+   - Show Rotation Slider
+- Double clicking on the viewport will enable users to add media as RPA Clips instead of RV source-groups.
 
+~~~~~~~~~~~~~~
+Exit RPA Mode:
+~~~~~~~~~~~~~~
 
+Once you enter RPA mode, Open RV will continue to stay in RPA mode even when you close and open Open RV. To exit out of RPA mode you can use the following menu from the main menu-bar of Open RV, **Open RV -> Exit out of RPA**.
+
+.. image:: _static/rpa_mode_exit.png
+   :alt: Exit out of RPA
+   :align: center
+
+When you exit RPA mode, your current Open RV will be closed and the next time you open Open RV it will launch in normal Open RV mode. So make sure to save your RPA session if needed before exiting RPA mode.
+
+.. image:: _static/rpa_mode_exit_warn.png
+   :alt: RPA Mode Exit Warning
+   :align: center
 
 -----------------------------
 Setting up RPA widgets in RV:
@@ -207,5 +220,5 @@ Follow the step by step instructions in **./rpa/README.md** under the "Build and
 Media Attribution
 =================
 
-Documentation includes clips/screenshots from *Big Buck Bunny* by the Blender Foundation, licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).  
+Documentation includes clips/screenshots from *Big Buck Bunny* by the Blender Foundation, licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
 Source: https://peach.blender.org/

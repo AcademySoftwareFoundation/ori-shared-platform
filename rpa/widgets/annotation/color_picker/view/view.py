@@ -8,8 +8,8 @@ except ImportError:
     from PySide6 import QtCore, QtWidgets
 
 from rpa.widgets.sub_widgets.color_circle import ColorCircle
-
-from rpa.widgets.annotation.color_picker.view.eye_dropper import EyeDropper
+from rpa.widgets.annotation.color_picker.view.eye_dropper.ScreenScraper import ScreenScraper
+from rpa.widgets.annotation.color_picker.view.eye_dropper.eye_dropper import EyeDropper
 from rpa.widgets.annotation.color_picker.view.color_monitor import ColorMonitor
 from rpa.widgets.annotation.color_picker.view.color_sliders import ColorSliders
 from rpa.widgets.annotation.color_picker.view.palette import BasicPalette
@@ -56,6 +56,8 @@ class View(QtWidgets.QDialog):
         self.setFixedSize(660, 620)
 
         self.__eye_dropper = EyeDropper()
+        self.__screen_scraper = ScreenScraper(parent)
+        self.__screen_scraper.hide()
         self.__color_monitor = ColorMonitor()
         self.__color_circle = ColorCircle()
         self.__color_sliders = ColorSliders()
@@ -81,6 +83,7 @@ class View(QtWidgets.QDialog):
         self.__eye_dropper.SIG_EYE_DROPPER_SIZE_NAME_CHANGED.connect(
             self.SIG_EYE_DROPPER_SIZE_NAME_CHANGED
         )
+        self.__screen_scraper.SIG_COLOR.connect(self.SIG_SET_CURRENT_COLOR)
 
         self.__color_sliders.SIG_RED_SLIDER_CHANGED.connect(self.SIG_RED_SLIDER_CHANGED)
         self.__color_sliders.SIG_GREEN_SLIDER_CHANGED.connect(self.SIG_GREEN_SLIDER_CHANGED)
@@ -108,9 +111,12 @@ class View(QtWidgets.QDialog):
 
     def enable_eye_dropper(self, enable):
         self.__eye_dropper.enable_eye_dropper(enable)
+        self.__screen_scraper.show()
+        self.__screen_scraper.start_sampling()
 
-    def set_eye_dropper_sample_size(self, index):
+    def set_eye_dropper_sample_size(self, index, size):
         self.__eye_dropper.set_eye_dropper_sample_size(index)
+        self.__screen_scraper.set_sample_size(size)
 
     def set_eye_dropper_sample_sizes(self, sample_sizes):
         self.__eye_dropper.set_eye_dropper_sample_sizes(sample_sizes)

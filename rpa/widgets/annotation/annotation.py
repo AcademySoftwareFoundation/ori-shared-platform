@@ -140,6 +140,10 @@ class Annotation(QtCore.QObject):
             lambda rgb : self.__set_color(rgb.red, rgb.green, rgb.blue, 1.0))
         self.actions.color.triggered.connect(lambda: self.__color_picker.show())
 
+        self.actions.toggle_eye_dropper.triggered.connect(
+            self.__color_picker.SIG_EYE_DROPPER_ENABLED
+        )
+
         for rpa_method in [
             self.__session_api.set_fg_playlist,
             self.__session_api.set_current_clip,

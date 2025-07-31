@@ -259,6 +259,7 @@ class Model(object):
         self.__current_color.update(
             *ColorBuilder.build_args_with_rgb(rgb.get_copy())
         )
+        self.set_recent_color(rgb.get_copy())
         return True
 
     def get_current_color(self):

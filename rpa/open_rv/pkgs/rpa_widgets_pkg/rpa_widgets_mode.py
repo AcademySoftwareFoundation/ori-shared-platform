@@ -249,6 +249,9 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
             if widget.widget().objectName() == "annotationTool":
                 if widget.isVisible(): widget.hide()
 
+        commands.unbind("default", "global", 'pointer-2--drag')
+        commands.unbind("default", "global", 'pointer-3--push')
+
         commands.unbind("default", "global", 'key-down--control--S')
         commands.unbind("default", "global", 'key-down--control--s')
 
@@ -550,6 +553,10 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
         annotation = Annotation(self.__rpa, self.__main_window)
         annotation.tool_bar.setOrientation(QtCore.Qt.Vertical)
         interactive_modes = InteractiveModes(self.__rpa, self.__main_window)
+        interactive_modes.dynamic_transform_mode.setEnabled(False)
+        interactive_modes.dynamic_transform_mode.setVisible(False)
+        interactive_modes.transform_mode.setEnabled(False)
+        interactive_modes.transform_mode.setVisible(False)
         interactive_modes.tool_bar.setOrientation(QtCore.Qt.Vertical)
         widget = QtWidgets.QWidget()
         layout = QtWidgets.QHBoxLayout()
