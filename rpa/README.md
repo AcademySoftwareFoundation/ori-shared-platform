@@ -24,7 +24,11 @@ Prebuilt packages for adding rpa(Review Plugin API) and rpa widgets into Open RV
 
 Use the following shell scripts to build and install RPA Wheel and Open-RV Packages.
 
-On Windows, you can use the provided Power-Shell-1 scripts. If you want to use the Bash scripts, use a Unix-like terminal such as mingw64.exe (available through MSYS2).
+On Windows, you can use the provided Power-Shell-1 scripts. To run Power-Shell-1 scripts in your terminal you might have to set the following execution policy,
+
+`Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`
+
+If you want to use the Bash scripts on Windows, use a Unix-like terminal such as mingw64.exe (available through MSYS2).
 
 ### Step 1:
 Run the following script to build the RPA Wheel and RPA Open RV Packages.

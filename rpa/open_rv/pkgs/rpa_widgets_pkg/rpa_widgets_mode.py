@@ -24,6 +24,7 @@ from rpa.widgets.background_modes.background_modes import BackgroundModes
 from rpa.widgets.rpa_interpreter.rpa_interpreter import RpaInterpreter
 from rpa.widgets.session_io.session_io import SessionIO
 from rpa.widgets.media_path_overlay.media_path_overlay import MediaPathOverlay
+# from rpa.widgets.playlist_creator.playlist_creator import PlaylistCreator
 
 from rpa.widgets.test_widgets.test_session_api import TestSessionApi
 from rpa.widgets.test_widgets.test_timeline_api import TestTimelineApi
@@ -278,7 +279,7 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
         self.__background_modes_dock = None
         self.__rpa_interpreter_dock = None
         self.__media_path_overlay_dock = None
-        self.__session_io_dock = None
+        self.__playlist_creator_dock = None
         self.__test_session_api_dock = None
         self.__test_timeline_api_dock = None
         self.__test_viewport_api_dock = None
@@ -416,6 +417,10 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
         action = QAction("Show Rotation Slider ", parent=self.__main_window)
         action.triggered.connect(self.__show_rotation_slider)
         rpa_widgets_menu.addAction(action)
+
+        # action = QAction("Playlists Creator", parent=self.__main_window)
+        # action.triggered.connect(self.__show_playlists_creator)
+        # rpa_widgets_menu.addAction(action)
 
         # action = QAction("Test Session API", parent=self.__main_window)
         # action.triggered.connect(self.__show_test_session_api)
@@ -662,7 +667,7 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
             QtCore.Qt.RightDockWidgetArea, self.__background_modes_dock)
         self.__background_modes_dock.show()
 
-    def __show_media_path_overlay(self,):
+    def __show_media_path_overlay(self):
         if not self.__is_init_done(): return
 
         if self.__media_path_overlay_dock:
@@ -678,6 +683,23 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
         self.__main_window.addDockWidget(
             QtCore.Qt.RightDockWidgetArea, self.__media_path_overlay_dock)
         self.__media_path_overlay_dock.show()
+
+    # def __show_playlists_creator(self):
+    #     if not self.__is_init_done(): return
+
+    #     if self.__playlist_creator_dock:
+    #         self.__toggle_dock_visibility(self.__playlist_creator_dock)
+    #         return
+
+    #     self.__playlist_creator = \
+    #         PlaylistCreator(self.__rpa, self.__main_window)
+
+    #     self.__playlist_creator_dock = \
+    #         DockWidget("Playlists Creator", self.__main_window)
+    #     self.__playlist_creator_dock.setWidget(self.__playlist_creator)
+    #     self.__main_window.addDockWidget(
+    #         QtCore.Qt.RightDockWidgetArea, self.__playlist_creator_dock)
+    #     self.__playlist_creator_dock.show()
 
     def __show_rpa_interpreter(self):
         if not self.__is_init_done(): return
