@@ -698,7 +698,10 @@ class ColorApiCore(QtCore.QObject):
         self.__ssbo = GL.glGenBuffers(1)
         GL.glBindBuffer(GL.GL_SHADER_STORAGE_BUFFER, self.__ssbo)
         GL.glBufferData(GL.GL_SHADER_STORAGE_BUFFER, len(data), bytes(data), GL.GL_STATIC_DRAW)
-        GL.glBindBufferBase(GL.GL_SHADER_STORAGE_BUFFER, 16, self.__ssbo)
+        # Check if binding point 16 is valid before binding
+        max_bindings = GL.glGetIntegerv(GL.GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS)
+        binding_index = min(16, max_bindings - 1)
+        GL.glBindBufferBase(GL.GL_SHADER_STORAGE_BUFFER, binding_index, self.__ssbo)
 
     def __get_source_resolution(self, source):
         smi = rvc.sourceMediaInfo(source)
