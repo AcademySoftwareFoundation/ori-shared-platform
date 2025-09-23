@@ -8,3 +8,4 @@
    rpa_api_modules/index
    rpa_widgets
    open_rv_implementation
+   release_notes
