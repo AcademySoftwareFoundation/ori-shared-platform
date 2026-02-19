@@ -1,8 +1,9 @@
 from typing import List
+from rpa.utils import utils
 try:
     from PySide2 import QtCore, QtWidgets
     from PySide2.QtWidgets import QAction
-except ImportError:
+except:
     from PySide6 import QtCore, QtWidgets
     from PySide6.QtGui import QAction
 
@@ -11,6 +12,7 @@ class SessionAssistant(QtCore.QObject):
     def __init__(self, rpa, main_window):
         super().__init__()
         self.__main_window = main_window
+        self.__rpa = rpa
         self.__session_api = rpa.session_api
         self.__timeline_api = rpa.timeline_api
         self.__actions = []
@@ -42,9 +44,9 @@ class SessionAssistant(QtCore.QObject):
         self.next_playlist_action.triggered.connect(
             self.__goto_next_playlist)
         self.prev_clip_action.triggered.connect(
-            self.__goto_prev_clip)
+            lambda: utils.goto_prev_clip(self.__rpa))
         self.next_clip_action.triggered.connect(
-            self.__goto_next_clip)
+            lambda: utils.goto_next_clip(self.__rpa))
         self.key_in_to_current_frame_action.triggered.connect(
             self.__set_key_in_to_current_frame)
         self.key_out_to_current_frame_action.triggered.connect(
@@ -66,57 +68,11 @@ class SessionAssistant(QtCore.QObject):
         current_index = playlist_ids.index(playlist_id)
 
         new_playlist_id = \
-            self.__get_offset_id(playlist_ids, current_index, offset)
+            utils.get_offset_id(playlist_ids, current_index, offset)
 
         if playlist_id != new_playlist_id:
             self.__session_api.set_fg_playlist(new_playlist_id)
 
-    def __goto_prev_clip(self):
-        self.__goto_clip(-1)
-
-    def __goto_next_clip(self):
-        self.__goto_clip(1)
-
-    def __goto_clip(self, offset:int):
-        clip_id = self.__session_api.get_current_clip()
-        if clip_id is None:
-            return
-
-        reselect = False
-        playlist_id = self.__session_api.get_playlist_of_clip(clip_id)
-        selected_clip_ids = self.__session_api.get_active_clips(playlist_id)
-        clip_ids = self.__session_api.get_clips(playlist_id)
-
-        if not selected_clip_ids:
-            selected_clip_ids = clip_ids
-        elif len(selected_clip_ids) == 1:
-            selected_clip_ids = clip_ids
-            reselect = True
-
-        current_index = selected_clip_ids.index(clip_id)
-
-        new_clip_id = \
-            self.__get_offset_id(selected_clip_ids, current_index, offset)
-
-        if clip_id != new_clip_id:
-            self.__session_api.set_current_clip(new_clip_id)
-            if reselect:
-                self.__session_api.set_active_clips(
-                    playlist_id, [new_clip_id])
-
-    def __get_offset_id(self, ids:List[str], index:int, offset:int)->str:
-        if len(ids) == 1:
-            new_index = 0
-        elif index == len(ids) - 1:
-            new_index = 0 if offset > 0 else index - 1
-        else:
-            new_index = index + offset
-
-        if new_index == -1:
-            new_index = len(ids) - 1
-
-        new_id = ids[new_index]
-        return new_id
 
     def __set_key_in_to_current_frame(self):
         clip_id = self.__session_api.get_current_clip()

@@ -1,7 +1,7 @@
 try:
     from PySide2 import QtCore, QtGui, QtWidgets
     from PySide2.QtWidgets import QAction
-except ImportError:
+except:
     from PySide6 import QtCore, QtGui, QtWidgets
     from PySide6.QtGui import QAction
 from rpa.widgets.annotation.color_picker.view import qcolor

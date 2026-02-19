@@ -1,0 +1,7 @@
+{
+  "class_name": "SessionAutoSaver",
+  "itview_version": "1.0.0",
+  "author_email": "itview-dev@imageworks.com",
+  "plugin_name": "Session Auto Saver",
+  "description": "Automatically keeps saving the session periodically so that it can be used as a backup if the application crashes."
+}

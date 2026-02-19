@@ -4,7 +4,7 @@ import six
 try:
     from PySide2 import QtCore, QtGui, QtWidgets
     from PySide2.QtWidgets import QAction, QActionGroup
-except ImportError:
+except:
     from PySide6 import QtCore, QtGui, QtWidgets
     from PySide6.QtGui import QAction, QActionGroup
 
@@ -79,13 +79,13 @@ class TimelineSlider(QtWidgets.QWidget):
         self.__annotation_ro_note_keys = set()
         self.__cc_ro_keys = set()
         self.__cc_rw_keys = set()
-        self.__transform_keys = set()
 
         # A subset of self.__key_set that contains selected keys.
         self.__selected_key_set = {}
 
-        # The misc keys we're displaying in the timeline
-        self.__misc_key_set = {}
+        # The frame edit keys we're displaying in the timeline
+        # This used to be misc keys in a list (legacy)
+        self.__frame_edit_key_set = tuple()
 
         # If not None, a shift mouse-press was done in the timeline to
         # select a key, deselect a key or to move selected keys.
@@ -110,8 +110,9 @@ class TimelineSlider(QtWidgets.QWidget):
         # mouseover but current time labels will not be present.
         self.__show_time_labels = True
 
-        # Should the widget show misc keys on the timeline?
-        self.__show_misc_keys = False
+        # Should the widget show frame edit keys on the timeline?
+        # Not used at this time (legacy)
+        self.__show_frame_edit_keys = False
 
         # Request mouseover events from QT.
         self.setMouseTracking(True)
@@ -154,8 +155,8 @@ class TimelineSlider(QtWidgets.QWidget):
         self.__current_time_color = QtGui.QColor(72, 240, 72)
         self.__current_time_past_full_color = QtGui.QColor(200, 100, 20)
         self.__key_number_bg_color = QtGui.QColor(34, 34, 34)
-        self._misc_key_frame_color = QtGui.QColor(67, 103, 117)
         self.__transform_key_frames_color = QtGui.QColor(240, 0, 0)
+        self.__frame_edit_key_color = QtGui.QColor(67, 103, 117)
 
         # Cache commonly used pens and brushes based on the above
         # colors.
@@ -302,16 +303,16 @@ class TimelineSlider(QtWidgets.QWidget):
         self.__selection_range = time_range
         self.SIG_SELECTION_RANGE_CHANGED.emit()
 
-    def set_show_misc_keys(self, flag):
+    def set_show_frame_edit_keys(self, flag):
         """
-        Set if to show misc keys and update the slider
+        Set to show frame edit keys and update the slider
 
         Args:
             flag (bool): flag to on or off
         """
-        if self.__show_misc_keys == flag:
+        if self.__show_frame_edit_keys == flag:
             return
-        self.__show_misc_keys = flag
+        self.__show_frame_edit_keys = flag
         self.update()
 
     def set_annotation_ro_note_keys(self, frames):
@@ -342,39 +343,10 @@ class TimelineSlider(QtWidgets.QWidget):
         self.SIG_SELECTED_KEYS_CHANGED.emit()
         self.update()
 
-    def add_misc_key(self, key, value):
-        """
-        Add new misc key and update the slider
-
-        Args:
-            key (int): key i.e. frame
-            value (int): what it represents
-        """
-        self.__misc_key_set[key] = value
-        self.update()
-
-    def remove_misc_key(self, time):
-        """
-        Remove the misc key at the given time and update the slider
-        :param time: time pos on slider
-        :type time: int
-        """
-        if self.__misc_key_set.pop(time, None) is None:
+    def set_frame_edit_keys(self, key_set):
+        if self.__frame_edit_key_set == key_set:
             return
-        self.update()
-
-    def clear_misc_keys(self):
-        """
-        Clear the misc keys and update the slider
-        """
-        self.__misc_key_set.clear()
-        self.update()
-
-    def set_misc_keys(self, key_set):
-        self.__misc_key_set.clear()
-        for key, value in key_set.items():
-            self.__misc_key_set[key] = value
-        self.SIG_KEY_SET_CHANGED.emit()
+        self.__frame_edit_key_set = key_set
         self.update()
 
     def set_transform_keys(self, key_set):
@@ -646,9 +618,9 @@ class TimelineSlider(QtWidgets.QWidget):
                     self.__cc_ro_keys,
                     self.__cc_rw_keys,
                     self.__selected_key_set,
-                    self.__misc_key_set,
+                    self.__frame_edit_key_set,
                     self.__transform_key_set,
-                    self.__show_misc_keys))
+                    self.__show_frame_edit_keys))
         pixmap = QtGui.QPixmap(size)
         if not QtGui.QPixmapCache.find(key, pixmap):
             painter = QtGui.QPainter()
@@ -673,14 +645,15 @@ class TimelineSlider(QtWidgets.QWidget):
             # and self.__selected_key_set.
             self.__paint_keys(painter, self.__annotation_ro_keys, self.__ro_annotation_frame_color)
             self.__paint_keys(painter, self.__cc_ro_keys, self.__ro_annotation_frame_color)
+            self.__paint_keys(painter, self.__annotation_ro_note_keys, self.__key_frame_color)
             self.__paint_keys(painter, self.__cc_rw_keys, self.__rw_annotation_frame_color)
             self.__paint_keys(painter, self.__annotation_rw_keys, self.__rw_annotation_frame_color)
-            self.__paint_keys(painter, self.__annotation_ro_note_keys, self.__key_frame_color)
+
             self.__paint_transform_keys(painter)
 
-            # Uses self.__timeRange, self.__misc_key_set,
+            # Uses self.__timeRange, self.__frame_edit_key_set,
             # and self.__show_time_labels.
-            self.__paint_misc_keys(painter)
+            self.__paint_frame_edit_keys(painter)
 
             painter.end()
             QtGui.QPixmapCache.insert(key, pixmap)
@@ -1005,48 +978,56 @@ class TimelineSlider(QtWidgets.QWidget):
 
             painter.fillRect(tick_area, key_brush)
 
-    def __paint_misc_keys(self, painter):
+    def __paint_frame_edit_keys(self, painter):
         """
-        Function that paints any misc keys set in the timeline
-        Currently, we are painting the timewarped frames as misc keys
+        Function that paints frame edit keys set in the timeline
+        Currently, we are painting the timewarped/edited frames
 
         Args:
             painter (QtGui.QPainter): QT painter
         """
-        if not self.__show_misc_keys:
-            return
+        # A preference flag if needed
+        # if not self.__show_frame_edit_keys:
+        #     return
 
         time_range = range(self.__time_range[0] - 1, self.__time_range[1] + 1)
-        misc_key_set = dict(
-            [(k, v) for k, v in six.iteritems(self.__misc_key_set) if k in time_range]
-        )
-        if not misc_key_set:
-            return
 
-        tick_height = self.__tick_area_extent.height()
+        # hold
+        hold_frame_edit_key_set = [k for k in self.__frame_edit_key_set[0] if k in time_range]
+        if hold_frame_edit_key_set:
+            tick_height = self.__tick_area_extent.height()
+            painter.setPen(self.__frame_edit_key_color)
+            max_key_plus_one = max(hold_frame_edit_key_set) + 1
 
-        painter.setPen(self.palette().color(QtGui.QPalette.Window))
-        max_key_plus_one = max(misc_key_set) + 1
+            def key_sort_index(t):
+                return t[0] + max_key_plus_one if t[0] in self.__selected_key_set else t[0]
 
-        def key_sort_index(t):
-            return t[0] + max_key_plus_one if t[0] in self.__selected_key_set else t[0]
+            for key in hold_frame_edit_key_set:
+                tick_area = self.__get_tick_area(key)
+                tick_area.setHeight(tick_height)
+                color = self.__frame_edit_key_color
 
-        for key_time, _ in sorted(six.iteritems(misc_key_set), key=key_sort_index):
-            tick_area = self.__get_tick_area(key_time)
-            tick_area.setHeight(tick_height)
-            color = self._misc_key_frame_color
+                tick_area.setLeft(int(tick_area.left()))
 
-            tick_area.setLeft(int(tick_area.left()))
+                grad = QtGui.QRadialGradient()
+                grad.setCenter(QtCore.QPointF(tick_area.topLeft()))
+                grad.setFocalPoint(QtCore.QPointF(tick_area.topLeft()))
+                grad.setRadius(max(tick_area.height(), tick_area.width()))
+                grad.setColorAt(0, color.lighter(115))
+                grad.setColorAt(1, color.darker(115))
+                key_brush = QtGui.QBrush(grad)
 
-            grad = QtGui.QRadialGradient()
-            grad.setCenter(QtCore.QPointF(tick_area.topLeft()))
-            grad.setFocalPoint(QtCore.QPointF(tick_area.topLeft()))
-            grad.setRadius(max(tick_area.height(), tick_area.width()))
-            grad.setColorAt(0, color.lighter(115))
-            grad.setColorAt(1, color.darker(115))
-            key_brush = QtGui.QBrush(grad)
+                painter.fillRect(tick_area, key_brush)
 
-            painter.fillRect(tick_area, key_brush)
+        # drop
+        drop_frame_edit_key_set = [k for k in self.__frame_edit_key_set[1] if k in time_range]
+        if drop_frame_edit_key_set:
+            painter.setPen(QtGui.QPen(self.__frame_edit_key_color, 2))
+            for key in sorted(drop_frame_edit_key_set):
+                tick_area = self.__get_tick_area(key)
+                tick_area_left = tick_area.left()
+                painter.drawLine(tick_area_left, 0,
+                                tick_area_left, self.height() - 5)
 
     def __paint_current_time(self, painter):
         """

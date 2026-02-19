@@ -1,0 +1,42 @@
+package: Node Graph Editor
+author: SPI
+organization: SPI
+version: 1.0
+requires: ''
+rv: 1.0.0
+openrv: 1.0.0
+optional: false
+
+modes: 
+  - file: node_graph_editor_mode.py
+    menu: 'Tools/Node Graph Editor'
+    shortcut: ''
+    event: ''
+    load: immediate
+
+description: |
+    <p>
+    <b>Interactive Node Graph Editor for OpenRV</b>
+    </p>
+    <p>
+    Visualize and edit the complete RV session node graph with real-time property editing.
+    </p>
+    <p>
+    <b>Features:</b>
+    </p>
+    <ul>
+        <li><b>Dynamic Graph Visualization</b>: View all nodes and connections in the session</li>
+        <li><b>Interactive Property Editor</b>: Double-click any node to view and edit its properties</li>
+        <li><b>Real-time Updates</b>: Changes reflect immediately in RV and vice versa</li>
+        <li><b>Property Reset</b>: Reset individual properties to their default values</li>
+        <li><b>Type-appropriate UI</b>: Sliders for floats, spinboxes for ints, text fields for strings</li>
+        <li><b>Bi-directional Sync</b>: UI updates when changes are made directly in RV</li>
+    </ul>
+    <p>
+    <b>Usage:</b> Tools > Node Graph Editor to open the dockable panel
+    </p>
+
+
+
+
+

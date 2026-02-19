@@ -1,6 +1,6 @@
 try:
     from PySide2 import QtCore
-except ImportError:
+except:
     from PySide6 import QtCore
 from rv import runtime
 from rv import extra_commands as rve
@@ -18,9 +18,7 @@ class TimelineApiCore(QtCore.QObject):
         self.__session_api = session_api
 
         self.__session_api.SIG_PLAYLIST_MODIFIED.connect(
-            self.__playlist_seq_modified)
-        self.__session_api.SIG_ACTIVE_CLIPS_SET.connect(
-            self.__playlist_seq_modified)
+            self._playlist_seq_modified)
         self.__session_api.SIG_ATTR_VALUES_CHANGED.connect(
             self.__attr_values_changed)
 
@@ -43,7 +41,7 @@ class TimelineApiCore(QtCore.QObject):
             "audio_api.check_for_scrubbing();", [])
         rvc.setFrame(frame)
 
-    def get_current_frame(self):
+    def get_current_frame(self, wait=False):
         return self.__session.timeline.get_current_frame()
 
     def get_frame_range(self):
@@ -104,14 +102,14 @@ class TimelineApiCore(QtCore.QObject):
         self.__session.timeline.set_playing_state(is_playing, is_forward)
         self.SIG_PLAY_STATUS_CHANGED.emit(is_playing, is_forward)
 
-    def __playlist_seq_modified(self, playlist_id):
+    def _playlist_seq_modified(self, playlist_id):
         if self.__session.viewport.fg != playlist_id: return
         self.__session.timeline.update()
         self.SIG_MODIFIED.emit()
 
     def __attr_values_changed(self, attr_values):
         if any(attr_value[0] == self.__session.viewport.fg and \
-            attr_value[2] in ("key_in", "key_out") for attr_value in attr_values):
+            attr_value[2] in ("key_in", "key_out", "dissolve_start","dissolve_length") for attr_value in attr_values):
             self.__session.timeline.update()
             self.SIG_MODIFIED.emit()
 

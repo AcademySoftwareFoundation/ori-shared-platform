@@ -1,0 +1,7 @@
+{
+  "class_name": "ClipsLoopModeToggler",
+  "itview_version": "1.0.0",
+  "author_email": "itview-dev@imageworks.com",
+  "plugin_name": "Clips Loop Mode Toggler",
+  "description": "Toggle clips loop mode between current clip and active clips"
+}

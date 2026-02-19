@@ -17,7 +17,7 @@ from rpa.session_state.color_corrections import \
     ColorTimer, Grade, ColorCorrection
 try:
     from PySide2 import QtCore
-except ImportError:
+except:
     from PySide6 import QtCore
 from typing import List, Union, Optional, Dict, Tuple
 
@@ -755,6 +755,22 @@ class ColorApi(QtCore.QObject):
         """
         return self.__delegate_mngr.call(self.set_ro_ccs, [ccs])
 
+    def set_frame_ro_ccs(self, clip_id:str, frame:int, ccs:list):
+        """
+        Sets the read-only color corrections for a specific frame.
+
+        This method replaces any existing read-only color corrections on the
+        specified frame with the provided list of color-correction entries.
+
+        Args:
+            clip_id (str): The identifier of the clip containing the target frame.
+            frame (int): The frame number on which the read-only color corrections
+                should be set.
+            ccs (list): A list of color-correction dictionaries or objects that
+                define the new read-only color correction values.
+        """
+        return self.__delegate_mngr.call(self.set_frame_ro_ccs, [clip_id, frame, ccs])
+
     def get_ro_ccs(
         self, clip_id:str, frame:Optional[int]=None)->List[ColorCorrection]:
         """
@@ -802,6 +818,24 @@ class ColorApi(QtCore.QObject):
             bool : True if sucess, False otherwise.
         """
         return self.__delegate_mngr.call(self.set_rw_ccs, [ccs])
+
+    def update_frame_rw_ccs(self, clip_id:str, frame:int, ccs:list):
+        """
+        Updates the read-write color corrections for a specific frame.
+
+        This method applies the provided color-correction settings (ccs)
+        to a given frame within the specified clip. New color corrections will
+        be added. Existing color corrections will be updated. And color
+        corrections which are missing the specifies ccs list will be removed.
+
+        Args:
+            clip_id (str): Identifier of the clip whose frame color corrections
+                should be updated.
+            frame (int): The frame number to which the color corrections apply.
+            ccs (list): A list of color-correction objects
+                representing the new read-write color correction values.
+        """
+        return self.__delegate_mngr.call(self.update_frame_rw_ccs, [clip_id, frame, ccs])
 
     def get_rw_ccs(
         self, clip_id:str, frame:Optional[int]=None)->List[ColorCorrection]:

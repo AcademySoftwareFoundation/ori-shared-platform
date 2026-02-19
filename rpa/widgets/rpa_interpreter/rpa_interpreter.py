@@ -7,13 +7,13 @@ try:
     from PySide2.QtGui import (
         QTextCharFormat, QFont, QColor, QSyntaxHighlighter, QKeyEvent
     )
-except ImportError:
+except:
     from PySide6.QtWidgets import (
         QWidget, QVBoxLayout, QPlainTextEdit, QTextEdit, QPushButton,
         QLabel, QHBoxLayout, QCompleter
     )
     from PySide6.QtCore import Qt, QRegularExpression, QStringListModel
-    QRegExp = QRegularExpression 
+    QRegExp = QRegularExpression
     from PySide6.QtGui import (
         QTextCharFormat, QFont, QColor, QSyntaxHighlighter, QKeyEvent
     )

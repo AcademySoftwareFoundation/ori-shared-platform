@@ -35,7 +35,7 @@ class ClipAttrAudioPath:
 
     def set_value(self, source_group:str, value:str):
         if value is None or value == "N/A":
-            return
+            return False
 
         source_name = f"{source_group}_source"
         media_paths = \
@@ -65,6 +65,8 @@ class ClipAttrAudioPath:
                 (both_with_audio or has_audio.count(True) == 1):
                 commands.setIntProperty(
                     f"{source_name}.group.noMovieAudio", [0])
+        
+        return True
 
     def get_value(self, source_group:str)->str:
         audio_path = "N/A"

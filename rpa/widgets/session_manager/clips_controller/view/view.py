@@ -1,16 +1,18 @@
 try:
     from PySide2 import QtCore, QtWidgets, QtGui
-except ImportError:
+except:
     from PySide6 import QtCore, QtWidgets, QtGui
 from rpa.widgets.session_manager.clips_controller.view.item_delegate \
     import ItemDelegate
-from rpa.widgets.session_manager.clips_controller.view.model import THUMBNAIL_HEIGHT
+from rpa.widgets.session_manager.clips_controller.view.model import \
+    THUMBNAIL_HEIGHT, ACTIVE_CLIPS_ROW_COLOR
 from rpa.widgets.session_manager.clips_controller.view.style \
     import Style
 
 
 class Table(QtWidgets.QTableView):
-    SIG_CONTEXT_MENU_REQUESTED = QtCore.Signal(int, QtCore.QPoint)
+    SIG_CONTEXT_MENU_REQUESTED = QtCore.Signal(str, int, QtCore.QPoint)
+    SIG_EMPTY_SPACE_CLICKED = QtCore.Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -32,12 +34,32 @@ class Table(QtWidgets.QTableView):
         self.setDropIndicatorShown(True)
         self.setStyle(Style())
 
+        palette = self.palette()
+        palette.setColor(
+            QtGui.QPalette.Highlight, QtGui.QColor(*ACTIVE_CLIPS_ROW_COLOR))
+        self.setPalette(palette)
+
+
     def contextMenuEvent(self, event):
         index = self.indexAt(event.pos()).row()
+        if index == -1:
+            actual_index = -1
+            clip_id = None
+        else:
+            source_model = self.model().sourceModel()
+            proxy_model = source_model.get_proxy_model()
+            source_mindex = proxy_model.mapToSource(self.indexAt(event.pos()))
+            actual_index = source_mindex.row()
+            clip_id = source_model.clips[actual_index]
+
         global_pos = self.mapToGlobal(event.pos())
-        self.SIG_CONTEXT_MENU_REQUESTED.emit(index, global_pos)
+        self.SIG_CONTEXT_MENU_REQUESTED.emit(clip_id, actual_index, global_pos)
 
     def mousePressEvent(self, event):
+        index = self.indexAt(event.pos())
+        if not index.isValid():
+            self.SIG_EMPTY_SPACE_CLICKED.emit()
+
         if event.button() == QtCore.Qt.MidButton:
             self.setDragEnabled(True)
         super().mousePressEvent(event)

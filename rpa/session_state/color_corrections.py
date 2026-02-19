@@ -231,9 +231,8 @@ class ColorCorrection:
 class ColorCorrections:
     """ Defines color corrections in a particular clip. """
 
-    def __init__(self):
-        self.__uuid_generator = SequentialUUIDGenerator(
-            os.environ.get("CC_UUID_SEED", uuid.uuid4().hex))
+    def __init__(self, cc_uuid_generator):
+        self.__uuid_generator = cc_uuid_generator
         self.__default_clip_cc_id = self.__uuid_generator.next_uuid()
         clip_cc = ColorCorrection(
             id = self.__default_clip_cc_id,
@@ -526,21 +525,70 @@ class ColorCorrections:
     def set_ro_ccs(self, ro_ccs):
         self.__set_ccs(ro_ccs, is_ro=True)
 
+    def set_frame_ro_ccs(self, frame, ccs):
+        new_cc_ids = set([cc.id for cc in ccs])
+        ccs_to_remove = []
+        if frame is None:
+            for cc_id in self.clip_ccs:
+                if cc_id not in new_cc_ids and self.id_to_cc[cc_id].is_ro:
+                    ccs_to_remove.append(cc_id)
+        else:
+            for cc_id in self.frame_ccs.get(frame, []):
+                if cc_id not in new_cc_ids and self.id_to_cc[cc_id].is_ro:
+                    ccs_to_remove.append(cc_id)
+        self.delete_ccs(ccs_to_remove, frame)
+        for cc in ccs:
+            self.__add_frame_cc(frame, cc, is_ro=True)
+
     def set_rw_ccs(self, rw_ccs):
         self.__set_ccs(rw_ccs, is_ro=False)
+
+    def update_frame_rw_ccs(self, frame, ccs):
+        new_cc_ids = []
+        for cc in ccs:
+            new_cc_ids.append(cc.id)
+            if cc.id in self.id_to_cc:
+                old_cc = self.id_to_cc[cc.id]
+                old_cc.nodes = cc.nodes
+                if cc.region:
+                    if not old_cc.region:
+                        old_cc.region = cc.region
+                    else:
+                        old_cc.region.falloff = cc.region.falloff
+            else:
+                self.__add_frame_cc(frame, cc, is_ro=False)
+        new_cc_ids_set = set(new_cc_ids)
+        ccs_to_remove = []
+        if frame is None:
+            for cc_id in self.clip_ccs:
+                if cc_id not in new_cc_ids_set and not self.id_to_cc[cc_id].is_ro and cc_id != self.__default_clip_cc_id:
+                    ccs_to_remove.append(cc_id)
+        else:
+            for cc_id in self.frame_ccs.get(frame, []):
+                if cc_id not in new_cc_ids_set and not self.id_to_cc[cc_id].is_ro:
+                    ccs_to_remove.append(cc_id)
+        self.delete_ccs(ccs_to_remove, frame)
+        if frame is None:
+            self.clip_ccs = new_cc_ids
+        else:
+            self.frame_ccs[frame] = new_cc_ids
 
     def __set_ccs(self, ccs, is_ro):
         if is_ro: self.delete_ro_ccs()
         else: self.delete_rw_ccs()
         for frame, cc in ccs:
-            self.id_to_cc[cc.id] = cc
-            if frame is None:
-                self.clip_ccs.append(cc.id)
-            else:
-                if frame not in self.frame_ccs:
-                    self.frame_ccs[frame] = []
-                self.frame_ccs[frame].append(cc.id)
-            cc.is_ro = is_ro
+            self.__add_frame_cc(frame, cc, is_ro)
+
+    def __add_frame_cc(self, frame, cc, is_ro):
+        if cc.id in self.clip_ccs \
+            or (frame in self.frame_ccs and cc.id in self.frame_ccs[frame]):
+            return
+        self.id_to_cc[cc.id] = cc
+        if frame is None:
+            self.clip_ccs.append(cc.id)
+        else:
+            self.frame_ccs.setdefault(frame, []).append(cc.id)
+        cc.is_ro = is_ro
 
     def delete_ro_ccs(self):
         ro_ccs_to_remove = []

@@ -1,0 +1,6 @@
+command: /spfs/bin/itview5
+entrypoint: ''
+kind: SPK
+allow_prerelease: true
+packages:
+  - itview5/0.8.0

@@ -31,21 +31,23 @@ class ClipAttrDynamicScaleX:
 
     def get_value(self, source_group:str)->str:
         value = self.default_value
-        if rvc.nodeExists(f"{source_group}_stack_t_{source_group}"):
+        if rvc.nodeExists(f"{source_group}_secondary_transform"):
             value = rvc.getFloatProperty(
-                f"{source_group}_stack_t_{source_group}.transform.scale")[0]
+                f"{source_group}_secondary_transform.transform.scale")[0]
         return value
 
     def _set_value(self, source_group:str, value:float):
-        if rvc.nodeExists(f"{source_group}_stack_t_{source_group}"):
+        if rvc.nodeExists(f"{source_group}_secondary_transform"):
             current_scale = rvc.getFloatProperty(
-            f"{source_group}_stack_t_{source_group}.transform.scale")
+            f"{source_group}_secondary_transform.transform.scale")
             current_scale_x = current_scale[0]
             current_scale_y = current_scale[1]
             if current_scale_x != value:
                 rvc.setFloatProperty(
-                    f"{source_group}_stack_t_{source_group}.transform.scale",
+                    f"{source_group}_secondary_transform.transform.scale",
                     [value, current_scale_y])
+                return True
+        return False
 
 
 

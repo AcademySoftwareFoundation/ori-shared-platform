@@ -32,9 +32,9 @@ class ClipAttrDynamicTranslateY:
 
     def get_value(self, source_group:str)->float:
         value = self.default_value
-        if rvc.nodeExists(f"{source_group}_stack_t_{source_group}"):
+        if rvc.nodeExists(f"{source_group}_secondary_transform"):
             value = rvc.getFloatProperty(
-                f"{source_group}_stack_t_{source_group}.transform.translate")[1]
+                f"{source_group}_secondary_transform.transform.translate")[1]
             h = rvc.sourceMediaInfo(
                 f"{source_group}_source").get("uncropHeight")
             value = prop_util.convert_translate_rv_to_itview(value, h)
@@ -44,15 +44,17 @@ class ClipAttrDynamicTranslateY:
         h = rvc.sourceMediaInfo(f"{source_group}_source").get("uncropHeight")
         converted_value = prop_util.convert_translate_itview_to_rv(value, h)
 
-        if rvc.nodeExists(f"{source_group}_stack_t_{source_group}"):
+        if rvc.nodeExists(f"{source_group}_secondary_transform"):
             current_translate = rvc.getFloatProperty(
-            f"{source_group}_stack_t_{source_group}.transform.translate")
+            f"{source_group}_secondary_transform.transform.translate")
             current_translate_x = current_translate[0]
             current_translate_y = current_translate[1]
             if converted_value != current_translate_y:
                 rvc.setFloatProperty(
-                    f"{source_group}_stack_t_{source_group}.transform.translate",
+                    f"{source_group}_secondary_transform.transform.translate",
                     [current_translate_x, converted_value])
+                return True
+        return False
 
 
 ClipAttrApiCore.get_instance()._add_attr(ClipAttrDynamicTranslateY())

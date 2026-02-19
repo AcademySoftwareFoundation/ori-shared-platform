@@ -1,0 +1,7 @@
+{
+  "class_name": "HelpMenu",
+  "itview_version": "1.0.0",
+  "author_email": "itview-dev@imageworks.com",
+  "plugin_name": "Help Menu",
+  "description": "Help menu with helpful links and RPA interpretter"
+}

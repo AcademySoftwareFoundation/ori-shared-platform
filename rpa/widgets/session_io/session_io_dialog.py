@@ -1,7 +1,7 @@
 import os
 try:
     from PySide2 import QtWidgets
-except ImportError:
+except:
     from PySide6 import QtWidgets
 from rpa.widgets.session_io import constants as C
 

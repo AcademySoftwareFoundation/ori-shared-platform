@@ -2,7 +2,7 @@ import os
 try:
     from PySide2 import QtCore, QtWidgets
     from PySide2.QtWidgets import QAction
-except ImportError:
+except:
     from PySide6 import QtCore, QtWidgets
     from PySide6.QtGui import QAction
 
@@ -43,6 +43,9 @@ class ContextMenu(QtWidgets.QMenu):
         self.__index = self.__mindex.row()
         self.clear()
 
+        clipboard = QtWidgets.QApplication.clipboard()
+        mime_data = clipboard.mimeData()
+
         create = QAction("Create", self)
         duplicate = QAction("Duplicate", self)
         cut = QAction("Cut", self)
@@ -61,6 +64,8 @@ class ContextMenu(QtWidgets.QMenu):
 
         self.__restore_menu = QtWidgets.QMenu("Restore", self)
         self.__restore_menu.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.__restore_menu.customContextMenuRequested.connect(
+            self.__load_restore_context_menu)
 
         ids = self.__session_api.get_deleted_playlists()
         ids = [] if ids is None else ids
@@ -70,32 +75,42 @@ class ContextMenu(QtWidgets.QMenu):
             action.setData(id)
             action.triggered.connect(self.__remove_from_recover_menu)
             self.__restore_menu.addAction(action)
-        self.__restore_menu.customContextMenuRequested.connect(
-            self.__load_restore_context_menu)
+
 
         if self.__index == -1:
+            if mime_data.hasFormat("rpa/playlists"):
+                self.addAction(paste)
+                self.addSeparator()
             self.addAction(create)
             if self.__injected_obj is not None:
                 for action in self.__injected_obj.get_actions(self.__index):
                     self.addAction(action)
+                    self.addSeparator()
             self.addSeparator()
             if len(names) > 0:
                 self.addMenu(self.__restore_menu)
+
         else:
+            self.addSeparator()
             self.addAction(rename)
             self.addSeparator()
             self.addAction(duplicate)
             self.addAction(cut)
             self.addAction(copy)
-            self.addAction(paste)
             self.addSeparator()
             self.addAction(delete)
             self.addSeparator()
 
             if self.__injected_obj is not None:
                 for action in self.__injected_obj.get_actions(self.__index):
+                    if action is None:
+                        self.addSeparator()
+                        continue
                     self.addAction(action)
                 for menu in self.__injected_obj.get_menus():
+                    if menu is None:
+                        self.addSeparator()
+                        continue
                     self.addMenu(menu)
 
         self.exec_(pos)

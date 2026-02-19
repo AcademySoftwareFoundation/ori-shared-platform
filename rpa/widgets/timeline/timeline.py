@@ -2,7 +2,7 @@ import json
 try:
     from PySide2 import QtCore, QtWidgets, QtGui
     from PySide2.QtWidgets import QShortcut
-except ImportError:
+except:
     from PySide6 import QtCore, QtWidgets, QtGui
     from PySide6.QtGui import QShortcut
 from rpa.widgets.timeline.view.range import TimelineRange
@@ -116,6 +116,10 @@ class TimelineController(QtWidgets.QToolBar):
             self.__timeline_api.set_volume, self.__post_set_volume)
         self.__timeline_api.delegate_mngr.add_post_delegate(
             self.__timeline_api.set_mute, self.__post_set_mute)
+        self.__timeline_api.delegate_mngr.add_post_delegate(
+            self.__timeline_api.enable_audio_scrubbing,
+            self.__post_enable_audio_scrubbing)
+
         self.actions.set_play_status(*self.__timeline_api.get_playing_state())
         self.actions.volume_slider.setValue(self.__timeline_api.get_volume())
 
@@ -132,7 +136,7 @@ class TimelineController(QtWidgets.QToolBar):
             new_frame = end
         elif new_frame > end:
             new_frame = start
-        
+
         if self.__slider_scope.is_clip_scope():
             [goto_frame] = self.__convert_to_clip_frames([new_frame])
         else:
@@ -149,6 +153,11 @@ class TimelineController(QtWidgets.QToolBar):
 
     def __post_set_mute(self, out, state):
         self.actions.toggle_mute(self.__timeline_api.is_mute(), emit_signal=False)
+
+    def __post_enable_audio_scrubbing(self, out, state):
+        self.actions.toggle_audio_scrubbing_action.blockSignals(True)
+        self.actions.toggle_audio_scrubbing_action.setChecked(state)
+        self.actions.toggle_audio_scrubbing_action.blockSignals(False)
 
     def __create_playback_toolbar(self):
         self.__tool_bar = QtWidgets.QToolBar("Playback Toolbar")
@@ -208,13 +217,14 @@ class TimelineController(QtWidgets.QToolBar):
                 left, right = 0, 0
         if left == right:
             right += 2
-        
+
         self.__slider.set_range(left, right)
 
     def __update_slider_keys(self):
         self.__annotation_modified()
         self.__cc_modified()
         self.__transform_keys_modified()
+        self.__frame_edit_keys_modified()
 
     def __slider_value_changed(self, value):
         clip_mode = self.__slider_scope.is_clip_scope()
@@ -287,7 +297,7 @@ class TimelineController(QtWidgets.QToolBar):
                 goto_frame = seq_frames[0]
         else:
             goto_frame = frame
-        
+
         if goto_frame:
             start, end = self.__timeline_api.get_frame_range()
             if start <= goto_frame <= end:
@@ -307,21 +317,21 @@ class TimelineController(QtWidgets.QToolBar):
     def __update_range_current_frame(self, sequence_frame=None):
         if self.__playlist_id is None:
             return
-        
+
         clip_mode = self.__range_scope.is_clip_scope()
 
         if sequence_frame is None:
             sequence_frame = self.__timeline_api.get_current_frame()
-        
+
         if clip_mode and self.__range_scope.is_display_mode_frame():
             [current_frame] = self.__convert_to_clip_frames([sequence_frame])
         else:
             current_frame = sequence_frame
-        
+
         if not self.__range_scope.is_display_mode_frame():
             [current_frame] = self.__convert_frames_display(
                 [sequence_frame], clip_mode, self.__range_scope.display_mode.value)
-        
+
         self.__timeline_range.set_current_frame(current_frame)
 
     def __update_range_key_in_out(self):
@@ -404,12 +414,78 @@ class TimelineController(QtWidgets.QToolBar):
         self.__update_range_current_frame(sequence_frame=sequence_frame)
         if self.__is_scrubbing:
             return
-        
+
         if self.__slider_scope.is_clip_scope():
             [current_frame] = self.__convert_to_clip_frames([sequence_frame])
         else:
-            current_frame = sequence_frame     
+            current_frame = sequence_frame
         self.__slider.set_current_time(current_frame)
+
+    def __frame_edit_keys_modified(self):
+        clip_mode = self.__slider_scope.is_clip_scope()
+        if clip_mode:
+            clip_frame_edit_keys = self.__get_clip_frame_edit_keys()
+            self.__slider.set_frame_edit_keys(clip_frame_edit_keys)
+        else:
+            seq_frame_edit_keys = self.__get_seq_frame_edit_keys()
+            self.__slider.set_frame_edit_keys(seq_frame_edit_keys)
+
+    def __get_clip_frame_edit_keys(self):
+        hold_keys = []
+        drop_keys = [] # indicator for at what key drop occured, not actual keys dropped
+        counts = {}
+
+        current_clip_id = self.__session_api.get_current_clip()
+        clip_frames = self.__timeline_api.get_clip_frames()
+        start = self.__session_api.get_attr_value(current_clip_id, "media_start_frame")
+        end = self.__session_api.get_attr_value(current_clip_id, "media_end_frame")
+
+        for i, (clip_id, clip_frame, local_frame) in enumerate(clip_frames):
+            if current_clip_id == clip_id:
+                counts[clip_frame] = counts.get(clip_frame, 0) + 1
+
+                if i == 0 and int(start) != int(clip_frame):
+                    drop_keys.extend(list(range(start + 1, clip_frame))) 
+                elif i == 0: 
+                    continue
+                elif i == len(clip_frames) - 1 and int(end) != int(clip_frame):
+                    drop_keys.extend(list(range(clip_frame + 1, end + 1)))
+
+                prev_clip_frame = int(clip_frames[i-1][1])
+                if (clip_frame - prev_clip_frame) > 1:
+                    drop_keys.append(clip_frame)
+
+        hold_keys = [clip_frame for clip_frame, count in counts.items() if count > 1]
+
+        return (sorted(hold_keys), sorted(drop_keys))
+
+    def __get_seq_frame_edit_keys(self):
+        hold_keys = []
+        drop_keys = [] # indicator for at what key drop occured, not actual keys dropped
+
+        if self.__playlist_id is not None:
+            clip_ids = self.__session_api.get_active_clips(self.__playlist_id)
+            for clip_id in clip_ids:
+                start = self.__session_api.get_attr_value(clip_id, "media_start_frame")
+                end = self.__session_api.get_attr_value(clip_id, "media_end_frame")
+                seq_frames = self.__timeline_api.get_seq_frames(clip_id)
+
+                for i, (clip_frame, seqs) in enumerate(seq_frames):
+                    if len(seqs) > 1:
+                        hold_keys.extend([key for key in sorted(seqs[1:]) if key > -1])
+
+                    if i == 0 and int(start) != int(clip_frame):
+                        drop_keys.append(seqs[0])
+                    elif i == 0:
+                        continue
+                    elif i == len(seq_frames) - 1 and end != clip_frame:
+                        drop_keys.append(seqs[0])
+
+                    prev_clip_frame = int(seq_frames[i-1][0]) if i != 0 else start
+                    if clip_frame != prev_clip_frame + 1 and seqs[0] > -1:
+                        drop_keys.append(seqs[0])
+
+        return (sorted(hold_keys), sorted(drop_keys))
 
     def __transform_keys_modified(self):
         clip_mode = self.__slider_scope.is_clip_scope()
@@ -470,17 +546,17 @@ class TimelineController(QtWidgets.QToolBar):
                 rw_frames = self.__annotation_api.get_rw_frames(clip_id)
                 rw_seq_frames = self.__timeline_api.get_seq_frames(clip_id, rw_frames)
                 if rw_seq_frames:
-                    annotation_rw_frames = [seqs[0] for _, seqs in rw_seq_frames]
-                
+                    annotation_rw_frames.extend([seqs[0] for _, seqs in rw_seq_frames])
+
                 ro_frames = self.__annotation_api.get_ro_frames(clip_id)
                 ro_seq_frames = self.__timeline_api.get_seq_frames(clip_id, ro_frames)
                 if ro_seq_frames:
-                    annotation_ro_frames = [seqs[0] for _, seqs in ro_seq_frames]
+                    annotation_ro_frames.extend([seqs[0] for _, seqs in ro_seq_frames])
 
                 ro_note_frames = self.__annotation_api.get_ro_note_frames(clip_id)
                 ro_note_seq_frames = self.__timeline_api.get_seq_frames(clip_id, ro_note_frames)
                 if ro_note_seq_frames:
-                    annotation_ro_note_frames = [seqs[0] for _, seqs in ro_note_seq_frames]
+                    annotation_ro_note_frames.extend([seqs[0] for _, seqs in ro_note_seq_frames])
 
         self.__slider.set_annotation_rw_keys(annotation_rw_frames)
         self.__slider.set_annotation_ro_keys(annotation_ro_frames)
@@ -491,6 +567,12 @@ class TimelineController(QtWidgets.QToolBar):
         if clip_mode:
             cc_rw_frames = self.__color_api.get_rw_frames(self.__clip_id)
             cc_ro_frames = self.__color_api.get_ro_frames(self.__clip_id)
+            clip_ro_ccs = self.__color_api.get_ro_ccs(self.__clip_id)
+            if clip_ro_ccs:
+                cc_ro_frames.append(self.__session_api.get_attr_value(self.__clip_id, "key_in"))
+            clip_rw_ccs = self.__color_api.get_rw_ccs(self.__clip_id)
+            if clip_rw_ccs and clip_rw_ccs[-1].is_modified:
+                cc_rw_frames.append(self.__session_api.get_attr_value(self.__clip_id, "key_in"))
         else:
             clip_ids = self.__session_api.get_active_clips(
                 self.__playlist_id
@@ -501,14 +583,20 @@ class TimelineController(QtWidgets.QToolBar):
             cc_ro_frames = []
             for clip_id in clip_ids:
                 rw_frames = self.__color_api.get_rw_frames(clip_id)
+                clip_rw_ccs = self.__color_api.get_rw_ccs(clip_id)
+                if clip_rw_ccs and clip_rw_ccs[-1].is_modified:
+                    rw_frames.append(self.__session_api.get_attr_value(clip_id, "key_in"))
                 rw_seq_frames = self.__timeline_api.get_seq_frames(clip_id, rw_frames)
                 if rw_seq_frames:
-                    cc_rw_frames = [seqs[0] for _, seqs in rw_seq_frames]
+                    cc_rw_frames.extend([seqs[0] for _, seqs in rw_seq_frames])
+
                 ro_frames = self.__color_api.get_ro_frames(clip_id)
+                clip_ro_ccs = self.__color_api.get_ro_ccs(clip_id)
+                if clip_ro_ccs and clip_ro_ccs[-1].is_modified:
+                    ro_frames.append(self.__session_api.get_attr_value(clip_id, "key_in"))
                 ro_seq_frames = self.__timeline_api.get_seq_frames(clip_id, ro_frames)
                 if ro_seq_frames:
-                    cc_ro_frames = [seqs[0] for _, seqs in ro_seq_frames]
-
+                    cc_ro_frames.extend([seqs[0] for _, seqs in ro_seq_frames])
         self.__slider.set_cc_rw_keys(cc_rw_frames)
         self.__slider.set_cc_ro_keys(cc_ro_frames)
 

@@ -1,0 +1,3 @@
+[MASTER]
+extension-pkg-allow-list=PySide6.QtCore, PySide6.QtGui, PySide6.QtWidgets
+max-line-length=79

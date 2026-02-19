@@ -1,6 +1,6 @@
 try:
     from PySide2 import QtCore, QtWidgets
-except ImportError:
+except:
     from PySide6 import QtCore, QtWidgets
 from functools import partial
 import os
@@ -39,7 +39,7 @@ class TestViewportApi:
         return self.__view
 
     def __run_test(self):
-        
+
         if not TEST_MEDIA_DIR:
             print("++++++++")
             print("Kindly set TEST_MEDIA_DIR environment variable to point to directory with test media!")
@@ -47,7 +47,7 @@ class TestViewportApi:
             print("For overlays, make sure there is a png image with opacity with the name one.png")
             print("For masks, make sure there is a tif image with opacity with the name one.tif")
             return
-        
+
         tests = [
             partial(self.__create_clips),
             partial(self.__create_html_overlay),
@@ -315,7 +315,7 @@ class TestViewportApi:
         print(self.__rpa.viewport_api.get_current_clip_geometry())
 
     def __set_mask_1(self):
-        self.__label.setText("set_mask_1")        
+        self.__label.setText("set_mask_1")
         self.__rpa.viewport_api.set_mask(os.path.join(TEST_MEDIA_DIR, "one.tif"),)
 
     def __remove_mask(self):

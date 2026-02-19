@@ -1,6 +1,6 @@
 try:
     from PySide2 import QtCore, QtWidgets, QtGui
-except ImportError:
+except:
     from PySide6 import QtCore, QtWidgets, QtGui
 
 

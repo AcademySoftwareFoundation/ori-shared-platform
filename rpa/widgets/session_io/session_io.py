@@ -2,7 +2,7 @@ import os
 try:
     from PySide2 import QtCore, QtWidgets
     from PySide2.QtWidgets import QAction
-except ImportError:
+except:
     from PySide6 import QtCore, QtWidgets
     from PySide6.QtGui import QAction
 from rpa.widgets.session_io import constants as C
@@ -43,6 +43,7 @@ class SessionIO(QtCore.QObject):
         return [self.append_session_action,
                 self.replace_session_action,
                 self.save_session_action,
+                self.clear_session_action,
                 self.core_preferences_action]
 
     def __init_actions(self):
@@ -58,6 +59,10 @@ class SessionIO(QtCore.QObject):
         self.save_session_action.setStatusTip(
             "Save the current session to a file")
 
+        self.clear_session_action = QAction("Clear Session", parent=self.__main_window)
+        self.clear_session_action.setStatusTip(
+            "Clears the entire session")
+
         self.core_preferences_action = QAction("Core Preferences", parent=self.__main_window)
         self.core_preferences_action.setStatusTip(
             "Show core preferences window")
@@ -65,7 +70,8 @@ class SessionIO(QtCore.QObject):
     def __connect_signals(self):
         self.append_session_action.triggered.connect(self.append_session)
         self.replace_session_action.triggered.connect(self.replace_session)
-        self.save_session_action.triggered.connect(self.save_session)
+        self.save_session_action.triggered.connect(lambda: self.save())
+        self.clear_session_action.triggered.connect(self.clear_session)
         self.core_preferences_action.triggered.connect(self.core_preferences)
 
     def override_signal(self, action, handler):
@@ -119,7 +125,7 @@ class SessionIO(QtCore.QObject):
         if success:
             self.__rpa.session_api.delete_playlists_permanently(playlist_ids)
 
-    def save_session(self):
+    def save(self, playlist_ids=None):
         filepath = self.__get_filepath_from_dialog(C.SAVE)
 
         if filepath is None:
@@ -128,7 +134,15 @@ class SessionIO(QtCore.QObject):
         if not filepath.endswith(C.OTIO_EXT):
             filepath += C.OTIO_EXT
 
-        self.__otio_writer.write_otio_file(filepath)
+        # when playlist_ids is None, all playlists will be saved
+        if playlist_ids is None:
+            playlist_ids = self.__rpa.session_api.get_playlists()
+
+        self.__otio_writer.write_to_file(playlist_ids, filepath)
+        return filepath
 
     def core_preferences(self):
         self.__rpa.session_api.core_preferences()
+
+    def clear_session(self):
+        self.__rpa.session_api.clear()

@@ -1,0 +1,9 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource>
+        <file>./align_center.png</file>
+        <file>./align_justify.png</file>
+        <file>./align_left.png</file>
+        <file>./align_right.png</file>
+    </qresource>
+</RCC>

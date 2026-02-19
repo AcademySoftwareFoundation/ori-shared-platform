@@ -4,7 +4,7 @@ View for Color Corrector
 
 try:
     from PySide2 import QtCore, QtWidgets
-except ImportError:
+except:
     from PySide6 import QtCore, QtWidgets
 from rpa.widgets.sub_widgets.mini_label_button import MiniLabelButton
 from rpa.widgets.color_corrector.view.tab_widget import ColorCorrectorTabWidget
@@ -17,8 +17,6 @@ class Footer(QtWidgets.QWidget):
     SIG_MUTE_TAB_CLICKED = QtCore.Signal()
     SIG_MUTE_ALL_TABS_CLICKED = QtCore.Signal()
     SIG_PRINT_CLICKED = QtCore.Signal()
-    SIG_EMAIL_ALL_CLICKED = QtCore.Signal()
-    SIG_PUBLISH_CLICKED = QtCore.Signal()
 
     def __init__(self):
         super().__init__()
@@ -27,31 +25,25 @@ class Footer(QtWidgets.QWidget):
         self.mute_tab = MiniLabelButton("Mute Tab", self)
         self.mute_all_tabs = MiniLabelButton("Mute All Tabs", self)
         print_= MiniLabelButton("Print", self)
-        email_all = MiniLabelButton("Email All", self)
-        publish = MiniLabelButton("Publish", self)
+        print_.setToolTip("Print current clip's color corrections at current frame")
 
-        # TODO:disabling until we add this functionality
-        print_.setEnabled(False)
-        email_all.setEnabled(False)
-        publish.setEnabled(False)
-
-        h_layout = QtWidgets.QHBoxLayout()
-        h_layout.addWidget(copy)
-        h_layout.addWidget(paste)
-        h_layout.addWidget(self.mute_tab)
-        h_layout.addWidget(self.mute_all_tabs)
-        h_layout.addWidget(print_)
-        h_layout.addWidget(email_all)
-        h_layout.addWidget(publish)
-        self.setLayout(h_layout)
+        self.__layout = QtWidgets.QHBoxLayout()
+        self.__layout.addWidget(copy)
+        self.__layout.addWidget(paste)
+        self.__layout.addWidget(self.mute_tab)
+        self.__layout.addWidget(self.mute_all_tabs)
+        self.__layout.addWidget(print_)
+        self.setLayout(self.__layout)
 
         copy.SIG_CLICKED.connect(self.SIG_COPY_CLICKED)
         paste.SIG_CLICKED.connect(self.SIG_PASTE_CLICKED)
         self.mute_tab.SIG_CLICKED.connect(self.SIG_MUTE_TAB_CLICKED)
         self.mute_all_tabs.SIG_CLICKED.connect(self.SIG_MUTE_ALL_TABS_CLICKED)
         print_.SIG_CLICKED.connect(self.SIG_PRINT_CLICKED)
-        email_all.SIG_CLICKED.connect(self.SIG_EMAIL_ALL_CLICKED)
-        publish.SIG_CLICKED.connect(self.SIG_PUBLISH_CLICKED)
+
+    def inject_buttons(self, buttons):
+        for button in buttons:
+            self.__layout.addWidget(button)
 
 
 class View(QtWidgets.QWidget):

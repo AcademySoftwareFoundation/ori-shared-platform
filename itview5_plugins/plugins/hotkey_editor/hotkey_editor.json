@@ -1,0 +1,7 @@
+{
+  "class_name": "HotkeyEditor",
+  "itview_version": "1.0.0",
+  "author_email": "itview-dev@imageworks.com",
+  "plugin_name": "Hotkey Editor",
+  "description": "Lists all Actions and their hotkeys and enables users to edit them."
+}

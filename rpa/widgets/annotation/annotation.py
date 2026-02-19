@@ -1,9 +1,9 @@
 import numpy as np
 import json
 try:
-    from PySide2 import QtCore, QtWidgets
-except ImportError:
-    from PySide6 import QtCore, QtWidgets
+    from PySide2 import QtCore, QtGui, QtWidgets
+except:
+    from PySide6 import QtCore, QtGui, QtWidgets
 from rpa.widgets.annotation.actions import Actions
 from rpa.widgets.annotation.tool_bar import ToolBar
 from rpa.widgets.annotation import svg
@@ -11,6 +11,7 @@ from rpa.widgets.annotation.color_picker.controller import Controller as ColorPi
 from rpa.widgets.annotation.color_picker.model import Model as ColorPickerModel, Rgb
 from rpa.widgets.annotation.color_picker.view.view import View as ColorPickerView
 from rpa.widgets.annotation import constants as C
+from rpa.utils import utils
 
 from rpa.session_state.annotations import Annotation as RpaAnnotation
 from rpa.session_state.annotations import \
@@ -25,6 +26,10 @@ class Strokes(Enum):
     ROTATE    = 0
     TRANSLATE = 1
     SCALE     = 2
+
+
+class Data:
+    pass
 
 
 class Annotation(QtCore.QObject):
@@ -63,18 +68,11 @@ class Annotation(QtCore.QObject):
         self.__create_tool_bar()
 
         self.__interactive_mode = self.__session_api.get_custom_session_attr(C.INTERACTIVE_MODE)
-        self.__mouse_down = False
-        self.__pguid = None
-        self.__cguid = None
-        self.__source_frame = None
+        self.__mouse_down = None
+        self.__tablet_down = None
         self.__geometry = None
-        self.__dimensions = None
         self.__text_position = None
         self.__text = Text()
-        self.__mouse_left_button_down = False     # move uses only currently
-        self.__mouse_right_button_down = False    # move uses only currently
-        self.__mouse_middle_button_down = False
-        self.__mouse_down_location = False
 
         self.__timeline_selected_keys = self.__session_api.get_custom_session_attr(C.TIMELINE_SELECTED_KEYS)
         dm = self.__session_api.delegate_mngr
@@ -82,6 +80,12 @@ class Annotation(QtCore.QObject):
 
         self.__last_point = None
         self.__timeline_api.SIG_FRAME_CHANGED.connect(self.__frame_changed)
+
+        # elapsed timer to throttle the frequency of tablet events
+        self.__tablet_timer = QtCore.QElapsedTimer()
+        self.__tablet_timer.start()
+        self.__last_tablet_event = 0
+        self.__tablet_interval = 1000 / 60.0  # ~16.6 ms (60 Hz)
 
     @QtCore.Slot()
     def __frame_changed(self):
@@ -94,6 +98,16 @@ class Annotation(QtCore.QObject):
             self.__text_line_edit.setFocus()
 
     def __update_custom_attrs(self, out, attr_id, value):
+        if attr_id == C.PEN_WIDTH:
+            self.__set_pen_width(value)
+        if attr_id == C.ERASER_WIDTH:
+            self.__set_eraser_width(value)
+        if attr_id == C.PICKED_COLOR:
+            self.__set_color(*value)
+        if attr_id == C.SHOW_COLOR_PICKER and value is True:
+            self.__color_picker.show()
+        if attr_id == C.ENABLE_EYE_DROPPER and value is True:
+            self.__color_picker.SIG_EYE_DROPPER_ENABLED.emit(True)
         if attr_id == C.INTERACTIVE_MODE:
             self.__interactive_mode = value
             self.__last_point = None
@@ -112,37 +126,49 @@ class Annotation(QtCore.QObject):
         self.actions.clear_frame.triggered.connect(self.__clear_frame)
         self.actions.show_annotations.triggered.connect(self.__toggle_annotation_visibility)
         self.actions.prev_annot_frame.triggered.connect(
-            lambda: self.__goto_nearest_feedback_frame(forward=False)
+            lambda: utils.goto_nearest_feedback_frame(self.__rpa, forward=False)
         )
         self.actions.next_annot_frame.triggered.connect(
-            lambda: self.__goto_nearest_feedback_frame(forward=True)
+            lambda: utils.goto_nearest_feedback_frame(self.__rpa, forward=True)
         )
         self.actions.cut_annotations.triggered.connect(self.__cut_annotations)
         self.actions.copy_annotations.triggered.connect(self.__copy_annotations)
         self.actions.paste_annotations.triggered.connect(self.__paste_annotations)
 
         self.actions.SIG_DRAW_SIZE_CHANGED.connect(
-            lambda action: self.__set_pen_width(action.get_size())
+            lambda action: self.__pen_width_changed(action.get_size())
             )
         self.actions.SIG_ERASER_SIZE_CHANGED.connect(
-            lambda action: self.__set_eraser_width(action.get_size()))
+            lambda action: self.__eraser_width_changed(action.get_size()))
 
         self.actions.SIG_TEXT_SIZE_CHANGED.connect(
             lambda action: self.__set_text_size(action.get_size()))
 
         self.__color_picker = ColorPickerController(
             ColorPickerModel(), ColorPickerView(self.__main_window))
+        self.__color_picker.SIG_CLOSE.connect(self.__color_picker_closed)
 
         self.__color_picker.set_current_color(
             Rgb(self.__color.r, self.__color.g, self.__color.b))
 
         self.__color_picker.SIG_SET_CURRENT_COLOR.connect(
-            lambda rgb : self.__set_color(rgb.red, rgb.green, rgb.blue, 1.0))
+            lambda rgb : self.__update_picked_color(
+                rgb.red, rgb.green, rgb.blue, 1.0))
         self.actions.color.triggered.connect(lambda: self.__color_picker.show())
 
         self.actions.toggle_eye_dropper.triggered.connect(
             self.__color_picker.SIG_EYE_DROPPER_ENABLED
         )
+
+        self.actions.annotation_holding.triggered.connect(self.__annotation_holding)
+        self.__rpa.annotation_api.delegate_mngr.add_post_delegate(
+            self.__rpa.annotation_api.set_annotation_holding,
+            self.__set_annotation_holding)
+
+        self.actions.annotation_ghosting.triggered.connect(self.__annotation_ghosting)
+        self.__rpa.annotation_api.delegate_mngr.add_post_delegate(
+            self.__rpa.annotation_api.set_annotation_ghosting,
+            self.__set_annotation_ghosting)
 
         for rpa_method in [
             self.__session_api.set_fg_playlist,
@@ -185,10 +211,35 @@ class Annotation(QtCore.QObject):
             self.__rpa.viewport_api.set_feedback_visibility,
             self.__feedback_visibility_delegate)
 
+    def __pen_width_changed(self, width):
+        self.__rpa.session_api.set_custom_session_attr(
+            C.PEN_WIDTH, width)
+
+    def __eraser_width_changed(self, width):
+        self.__rpa.session_api.set_custom_session_attr(
+            C.ERASER_WIDTH, width)
+
+    def __color_picker_closed(self):
+        self.__rpa.session_api.set_custom_session_attr(
+            C.SHOW_COLOR_PICKER, False)
+
+    def set_pen_color(self, color):
+        r, g, b = color
+        self.__update_picked_color(r, g, b, self.__color.a)
+        self.blockSignals(True)
+        out = self.__color_picker.set_current_color(
+            Rgb(self.__color.r, self.__color.g, self.__color.b))
+        self.__color_picker.set_color_in_use()
+        self.blockSignals(False)
+
     def __set_pen_width(self, width):
+        self.tool_bar.draw_size_button.setIcon(
+            self.actions.draw_sizes[width].icon())
         self.__pen_width = width
 
     def __set_eraser_width(self, width):
+        self.tool_bar.eraser_size_button.setIcon(
+            self.actions.eraser_sizes[width].icon())
         self.__eraser_width = width
 
     def __set_text_size(self, size):
@@ -201,7 +252,7 @@ class Annotation(QtCore.QObject):
     def __set_text(self, text):
         if not self.__viewport_api.is_text_cursor_set(): return
         cguid = self.__session_api.get_current_clip()
-        frame = self.__get_current_clip_frame()
+        frame = utils.get_current_clip_frame(self.__rpa)
         self.__annotation_api.set_text(
             cguid, frame, Text(
                 text, self.__text_position, self.__color, self.__text_size))
@@ -214,26 +265,12 @@ class Annotation(QtCore.QObject):
         self.__text = Text()
         self.__text_position = None
 
-    def __get_resolution(self, playlist_id, clip_id):
-        w, h = 0, 0
-        resolution = self.__session_api.get_attr_value(clip_id, "resolution")
-        w, h = resolution.split("x")
-        w = int(w.strip())
-        h = int(h.strip())
-        return w, h
-
-    def __append_point(self, interactive_mode, x, y, is_line=False):
+    def __append_mouse_point(self, x, y):
+        interactive_mode = self.__mouse_down.interactive_mode
         if interactive_mode == C.INTERACTIVE_MODE_MOVE:
             self.__core_view.setCursor(QtCore.Qt.ClosedHandCursor)
-            if self.__mouse_left_button_down:
-                self.__update_annotations(
-                    Strokes.TRANSLATE, self.__mouse_down_location, (x,y))
-            if self.__mouse_right_button_down:
-                self.__update_annotations(
-                    Strokes.SCALE, self.__mouse_down_location, (x,y))
-            if self.__mouse_middle_button_down:
-                self.__update_annotations(
-                    Strokes.ROTATE, self.__mouse_down_location, (x,y))
+            self.__update_annotations(
+                self.__mouse_down.transform, self.__mouse_down.location, (x,y))
             return
         mode = StrokeMode.PEN
         if interactive_mode in (
@@ -249,6 +286,8 @@ class Annotation(QtCore.QObject):
             width = self.__eraser_width
         point = Point(*screen_to_itview(self.__geometry, x, y))
         self.__last_point = point if interactive_mode == C.INTERACTIVE_MODE_MULTI_LINE else None
+        is_line = interactive_mode in (C.INTERACTIVE_MODE_LINE, C.INTERACTIVE_MODE_MULTI_LINE)
+
         stroke_point = StrokePoint(
             mode=mode,
             brush=brush,
@@ -256,14 +295,35 @@ class Annotation(QtCore.QObject):
             color=self.__color,
             point=point)
         self.__annotation_api.append_transient_point(
-            self.__cguid,
-            self.__source_frame,
+            self.__mouse_down.cguid,
+            self.__mouse_down.source_frame,
             "local",
             stroke_point,
             is_line=is_line)
 
+    def __append_tablet_point(self, x, y, width, opacity):
+        interactive_mode = self.__tablet_down.interactive_mode
+        mode = StrokeMode.PEN
+        brush = StrokeBrush.CIRCLE
+        pen_width = self.__pen_width * width
+        color = Color().__setstate__(self.__color.__getstate__())
+        color.a *= opacity
+        point = Point(*screen_to_itview(self.__geometry, x, y))
+
+        stroke_point = StrokePoint(
+            mode=mode,
+            brush=brush,
+            width=pen_width,
+            color=color,
+            point=point)
+        self.__annotation_api.append_transient_point(
+            self.__tablet_down.cguid,
+            self.__tablet_down.source_frame,
+            "local",
+            stroke_point)
+
     def __update_annotations(self, transform, old, new):
-        if not self.__annotation: return
+        if not self.__mouse_down.annotation: return
 
         # points in screen coordinates
         sold = Point(*old)
@@ -275,7 +335,7 @@ class Annotation(QtCore.QObject):
         inew = Point(*screen_to_itview(self.__geometry, *new))
         idx, idy = inew.x - iold.x, inew.y - iold.y
 
-        new_annotation = self.__annotation.copy()
+        new_annotation = self.__mouse_down.annotation.copy()
         if transform == Strokes.TRANSLATE:
             for annotation in new_annotation.annotations:
                 if isinstance(annotation, Stroke):
@@ -304,7 +364,7 @@ class Annotation(QtCore.QObject):
                         x += sold.x; y += sold.y
                         point.x, point.y = screen_to_itview(self.__geometry, x, y)
         self.__annotation_api.set_rw_annotations(
-            {self.__cguid: {self.__source_frame: new_annotation}})
+            {self.__mouse_down.cguid: {self.__mouse_down.source_frame: new_annotation}})
 
     def eventFilter(self, obj, event):
         if obj == self.__text_line_edit:
@@ -322,10 +382,18 @@ class Annotation(QtCore.QObject):
         if event.type() == QtCore.QEvent.Leave:
             self.__annotation_api.set_pointer(None)
 
-        if not (
-        event.type() == QtCore.QEvent.MouseButtonPress or \
-        event.type() == QtCore.QEvent.MouseMove or \
-        event.type() == QtCore.QEvent.MouseButtonRelease):
+        if event.type() in (
+            QtGui.QTabletEvent.TabletPress,
+            QtGui.QTabletEvent.TabletMove,
+            QtGui.QTabletEvent.TabletRelease):
+            self.handle_tablet_events(obj, event)
+            event.accept()
+            return True
+
+        if event.type() not in (
+            QtCore.QEvent.MouseButtonPress,
+            QtCore.QEvent.MouseMove,
+            QtCore.QEvent.MouseButtonRelease):
             return False
 
         get_pos = lambda: (event.pos().x(), obj.height() - event.pos().y())
@@ -360,18 +428,32 @@ class Annotation(QtCore.QObject):
                     point=point)
                 self.__annotation_api.set_pointer(stroke_point)
 
+        if self.__mouse_down:
+
+            # continue stroke
+            if event.type() == QtCore.QEvent.MouseMove:
+                self.__append_mouse_point(*get_pos())
+                return False
+
+            # finish stroke
+            if event.type() == QtCore.QEvent.MouseButtonRelease:
+                self.__append_mouse_point(*get_pos())
+                strokes = self.__annotation_api.get_transient_strokes(self.__mouse_down.cguid, self.__mouse_down.source_frame, "local")
+                if strokes:
+                    self.__annotation_api.append_strokes(self.__mouse_down.cguid, self.__mouse_down.source_frame, strokes)
+                self.__annotation_api.delete_transient_points(self.__mouse_down.cguid, self.__mouse_down.source_frame, "local")
+                if self.__mouse_down.interactive_mode == C.INTERACTIVE_MODE_MOVE:
+                    self.__core_view.setCursor(QtCore.Qt.OpenHandCursor)
+                    self.__viewport_api.set_cross_hair_cursor(None)
+                self.__mouse_down = None
+                return False
+
         interactive_mode = self.__session_api.get_custom_session_attr(
             C.MODIFIER_INTERACTIVE_MODE)
         if interactive_mode is None: interactive_mode = self.__interactive_mode
         if interactive_mode is None: return False
 
-        is_line = interactive_mode in (C.INTERACTIVE_MODE_LINE, C.INTERACTIVE_MODE_MULTI_LINE)
-
-        if self.__mouse_down and event.type() == QtCore.QEvent.MouseMove:
-            self.__append_point(interactive_mode, *get_pos(), is_line=is_line)
-
-        self.__source_frame = self.__get_current_clip_frame()
-        # Text mode
+        # text mode
         if interactive_mode == C.INTERACTIVE_MODE_TEXT and \
             event.type() == QtCore.QEvent.MouseButtonRelease:
                 self.__text_position = Point(
@@ -379,53 +461,91 @@ class Annotation(QtCore.QObject):
                 self.__viewport_api.set_text_cursor(
                     self.__text_position, self.__text_size)
                 self.show_text_line_edit(True)
+
+        # pen mode
         if interactive_mode in (
             C.INTERACTIVE_MODE_PEN, C.INTERACTIVE_MODE_LINE, C.INTERACTIVE_MODE_MULTI_LINE,
             C.INTERACTIVE_MODE_AIRBRUSH, C.INTERACTIVE_MODE_HARD_ERASER, C.INTERACTIVE_MODE_SOFT_ERASER,
             C.INTERACTIVE_MODE_MOVE):
             if event.type() == QtCore.QEvent.MouseButtonPress:
-                self.__pguid = self.__session_api.get_fg_playlist()
-                self.__cguid = self.__session_api.get_current_clip()
-                if None not in (self.__pguid, self.__cguid):
-                    self.__mouse_down = True
-                    self.__dimensions = self.__get_resolution(self.__pguid, self.__cguid)
+                pguid = self.__session_api.get_fg_playlist()
+                cguid = self.__session_api.get_current_clip()
+                if None not in (pguid, cguid):
+                    self.__mouse_down = Data()
+                    self.__mouse_down.interactive_mode = interactive_mode
+                    self.__mouse_down.cguid = cguid
+                    self.__mouse_down.source_frame = utils.get_current_clip_frame(self.__rpa)
                     if interactive_mode == C.INTERACTIVE_MODE_MOVE:
-                        annotation = self.__annotation_api.get_rw_annotation(self.__cguid, self.__source_frame)
+                        annotation = self.__annotation_api.get_rw_annotation(self.__mouse_down.cguid, self.__mouse_down.source_frame)
                         if annotation:
-                            self.__annotation = RpaAnnotation().__setstate__(annotation.__getstate__())
-                            self.__mouse_down_location = get_pos()
+                            self.__mouse_down.annotation = RpaAnnotation().__setstate__(annotation.__getstate__())
+                            self.__mouse_down.location = get_pos()
                             self.__viewport_api.set_cross_hair_cursor(
                                 Point(*screen_to_itview(self.__geometry, *get_pos())))
                             if event.button() == QtCore.Qt.LeftButton:
-                                self.__mouse_left_button_down = True
+                                self.__mouse_down.transform = Strokes.TRANSLATE
                             elif event.button() == QtCore.Qt.MiddleButton:
-                                self.__mouse_middle_button_down = True
+                                self.__mouse_down.transform = Strokes.ROTATE
                             elif event.button() == QtCore.Qt.RightButton:
-                                self.__mouse_right_button_down = True
+                                self.__mouse_down.transform = Strokes.SCALE
                     if interactive_mode == C.INTERACTIVE_MODE_MULTI_LINE and self.__last_point:
                         x, y = itview_to_screen(self.__geometry, *self.__last_point.__getstate__())
-                        self.__append_point(interactive_mode, x, y, is_line=is_line)
-                    self.__append_point(interactive_mode, *get_pos(), is_line=is_line)
+                        self.__append_mouse_point(x, y)
+                    self.__append_mouse_point(*get_pos())
 
-            if event.type() == QtCore.QEvent.MouseButtonRelease:
-                if self.__mouse_down:
-                    self.__mouse_down = False
-                    self.__append_point(interactive_mode, *get_pos(), is_line=is_line)
-                    stroke = self.__annotation_api.get_transient_stroke(self.__cguid, self.__source_frame, "local")
-                    if stroke is not None:
-                        self.__annotation_api.append_strokes(self.__cguid, self.__source_frame, [stroke])
-                    self.__annotation_api.delete_transient_points(self.__cguid, self.__source_frame, "local")
-                    if interactive_mode == C.INTERACTIVE_MODE_MOVE:
-                        self.__annotation = None
-                        self.__mouse_left_button_down = False
-                        self.__mouse_middle_button_down = False
-                        self.__mouse_right_button_down = False
-                        self.__mouse_down_location = None
-                        self.__core_view.setCursor(QtCore.Qt.OpenHandCursor)
-                        self.__viewport_api.set_cross_hair_cursor(None)
         return False
 
+    def handle_tablet_events(self, obj, event):
+        get_pos = lambda: (event.pos().x(), obj.height() - event.pos().y())
+        self.__geometry = self.__viewport_api.get_current_clip_geometry()
+
+        pressure = event.pressure()
+        tilt_magnitude = (abs(event.xTilt()) + abs(event.yTilt())) / 120.0
+        tilt_magnitude = min(1.0, tilt_magnitude)
+        width = 0.2 + pressure * (1.0 - 0.5 * tilt_magnitude)
+        opacity = 0.3 + 0.7 * pressure * (1.0 - 0.3 * tilt_magnitude)
+
+        if self.__tablet_down:
+
+            # continue stroke
+            if event.type() == QtGui.QTabletEvent.TabletMove:
+                now = self.__tablet_timer.elapsed()
+                if now - self.__last_tablet_event > self.__tablet_interval:
+                    self.__last_tablet_event = now
+                    self.__append_tablet_point(*get_pos(), width, opacity)
+                return
+
+            # finish stroke
+            if event.type() == QtGui.QTabletEvent.TabletRelease:
+                self.__append_tablet_point(*get_pos(), width, opacity)
+                strokes = self.__annotation_api.get_transient_strokes(self.__tablet_down.cguid, self.__tablet_down.source_frame, "local")
+                if strokes:
+                    self.__annotation_api.append_strokes(self.__tablet_down.cguid, self.__tablet_down.source_frame, strokes)
+                self.__annotation_api.delete_transient_points(self.__tablet_down.cguid, self.__tablet_down.source_frame, "local")
+                self.__tablet_down = None
+                return
+
+        # start stroke
+        if event.type() == QtGui.QTabletEvent.TabletPress:
+            pguid = self.__session_api.get_fg_playlist()
+            cguid = self.__session_api.get_current_clip()
+            if None not in (pguid, cguid):
+                self.__tablet_down = Data()
+                self.__tablet_down.interactive_mode = C.INTERACTIVE_MODE_PEN
+                self.__tablet_down.cguid = cguid
+                self.__tablet_down.source_frame = utils.get_current_clip_frame(self.__rpa)
+                self.__append_tablet_point(*get_pos(), width, opacity)
+
+    def __update_picked_color(self, r, g, b, a):
+        self.__rpa.session_api.set_custom_session_attr(
+            C.PICKED_COLOR, (r, g, b, a))
+
     def __set_color(self, r, g, b, a):
+        """
+        To make sure the correct color is set even from other widgets which
+        might want to change the color, this method is meant to be called from
+        the __update_custom_attrs method.
+        """
         self.actions.set_color(r, g, b, a)
         self.__color = Color(r, g, b, a)
         if self.__viewport_api.is_text_cursor_set():
@@ -442,19 +562,13 @@ class Annotation(QtCore.QObject):
             lambda text: self.__set_text(text))
 
     def __undo(self):
-        cguid = self.__session_api.get_current_clip()
-        current_frame = self.__get_current_clip_frame()
-        self.__annotation_api.undo(cguid, current_frame)
+        utils.undo_annotations(self.__rpa)
 
     def __redo(self):
-        cguid = self.__session_api.get_current_clip()
-        current_frame = self.__get_current_clip_frame()
-        self.__annotation_api.redo(cguid, current_frame)
+        utils.redo_annotations(self.__rpa)
 
     def __clear_frame(self):
-        cguid = self.__session_api.get_current_clip()
-        current_frame = self.__get_current_clip_frame()
-        self.__annotation_api.clear_frame(cguid, current_frame)
+        utils.clear_current_frame_annotations(self.__rpa)
 
     def __feedback_visibility_delegate(self, out, category, value):
         if category == 1:
@@ -524,50 +638,6 @@ class Annotation(QtCore.QObject):
             for frame in frames:
                 self.__annotation_api.delete_rw_annotation(clip_id, frame)
 
-    def __goto_nearest_feedback_frame(self, forward):
-        playlist_id = self.__session_api.get_fg_playlist()
-        playlist_id = self.__session_api.get_fg_playlist()
-        clip_id = self.__session_api.get_current_clip()
-        if not playlist_id or not clip_id:
-            return False
-        current_frame = self.__get_current_clip_frame()
-        clip_ids = self.__session_api.get_clips(playlist_id)
-        num_of_clips = len(clip_ids)
-        def get_unique_values(l1, l2):
-            unique_values = set(l1).union(set(l2))
-            return sorted(unique_values)
-        for ii, i in enumerate(range(num_of_clips+1)):
-            clip_index = (clip_ids.index(clip_id) + (i if forward else -i)) % num_of_clips
-            new_clip_id = clip_ids[clip_index]
-            annotation_frames = self.__annotation_api.get_rw_frames(new_clip_id) \
-                                + self.__annotation_api.get_ro_frames(new_clip_id)
-            cc_frames = self.__color_api.get_rw_frames(new_clip_id) \
-                        + self.__color_api.get_ro_frames(new_clip_id)
-            frames = get_unique_values(annotation_frames, cc_frames)
-            if not frames: continue
-            frames = frames if forward else reversed(frames)
-            seq_frames = self.__timeline_api.get_seq_frames(new_clip_id, frames)
-            if seq_frames:
-                first_seq_frames_only = [seqs[0] for _, seqs in seq_frames]
-            for frame in first_seq_frames_only:
-                if frame == -1:
-                    continue
-                if new_clip_id != clip_id:
-                    self.__session_api.set_current_clip(new_clip_id)
-                    self.__timeline_api.goto_frame(frame)
-                    return False
-                if forward:
-                    if (ii == 0 and frame > current_frame) \
-                            or (ii != 0 and frame < current_frame):
-                        self.__timeline_api.goto_frame(frame)
-                        return False
-                else:
-                    if (ii == 0 and frame < current_frame) \
-                            or (ii != 0 and frame > current_frame):
-                        self.__timeline_api.goto_frame(frame)
-                        return False
-        return True
-
     def __get_current_clip_frame(self):
         clip_frame = self.__timeline_api.get_clip_frames([self.__timeline_api.get_current_frame()])
         if not clip_frame:
@@ -577,3 +647,18 @@ class Annotation(QtCore.QObject):
             if type(clip_frame) is not tuple:
                 return -1
             return clip_frame[1]
+
+    def __annotation_ghosting(self):
+        value = self.__annotation_api.get_annotation_ghosting()
+        self.__annotation_api.set_annotation_ghosting(not value)
+
+    def __set_annotation_ghosting(self, out, value):
+        self.actions.annotation_ghosting.setChecked(value)
+
+    def __annotation_holding(self):
+        value = self.__annotation_api.get_annotation_holding()
+        self.__annotation_api.set_annotation_holding(not value)
+
+    def __set_annotation_holding(self, out, value):
+        self.actions.annotation_holding.setChecked(value)
+

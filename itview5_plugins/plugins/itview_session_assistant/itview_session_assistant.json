@@ -1,0 +1,7 @@
+{
+    "class_name": "ItviewSessionAssistant",
+    "itview_version": "1.0.0",
+    "author_email": "itview-dev@imageworks.com",
+    "plugin_name": "Itview Session Assistant",
+    "description": "Provides session controls"
+}

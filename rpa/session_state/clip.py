@@ -5,22 +5,26 @@ from rpa.session_state.annotations import Annotations
 import copy
 
 
+
 class Clip:
     id_to_self = {}
-    def __init__(self, playlist_id, id, path):
+    def __init__(self, playlist_id, id, path, cc_uuid_generator):
         Clip.id_to_self[id] = self
         self.__playlist_id = playlist_id
         self.__id = id
         self.path = path
         self.__attrs = {}
         self.__custom_attrs = {}
-        self.__color_corrections = ColorCorrections()
+        self.__color_corrections = ColorCorrections(cc_uuid_generator)
         self.__annotations = Annotations()
 
         # frame edits
-        self.__local_frame_map = {}
         self.__source_frames = []
-        self.__timewarp_map = {}
+        self.__has_key_in_out_edits = False
+        self.__has_frame_edits = False
+
+        # media overlays
+        self.__media_overlays = []
 
     @property
     def id(self):
@@ -38,6 +42,10 @@ class Clip:
     def annotations(self):
         return self.__annotations
 
+    @property
+    def has_frame_edits(self)->bool:
+        return self.__has_frame_edits
+
     def set_custom_attr(self, attr_id, value):
         self.__custom_attrs[attr_id] = value
         return True
@@ -49,14 +57,58 @@ class Clip:
         return list(self.__custom_attrs.keys())
 
     def set_attr_value(self, id, value):
-        self.__attrs[id] = value
-
         if id in ("key_in", "key_out"):
-            tw_in = self.__attrs.get("timewarp_in")
-            tw_out = self.__attrs.get("timewarp_out")
-            tw_length = self.__attrs.get("timewarp_length")
-            if None in (tw_in, tw_out, tw_length):
-                self.__update_local_frame_map()
+            # This logic is based on the assumption that key_in and key_out
+            # will always be set after media_start_frame and media_end_frame.
+            media_start = self.__attrs.get("media_start_frame")
+            media_end = self.__attrs.get("media_end_frame")
+            if not self.__has_frame_edits:
+                self.__attrs[id] = value
+                key_in = self.__attrs.get("key_in")
+                key_out = self.__attrs.get("key_out")
+                self.__source_frames.clear()
+                self.__source_frames = self.__generate_clamped_source_frames(
+                    key_in, key_out, media_start, media_end
+                )
+                if key_in != media_start or key_out != media_end:
+                    self.__has_key_in_out_edits = True
+                else:
+                    self.__has_key_in_out_edits = False
+        else:
+            self.__attrs[id] = value
+
+    def __generate_clamped_source_frames(self, key_in, key_out, media_start, media_end):
+        """
+        Generate source frames list with clamping logic.
+
+        - Frames before media_start are set to media_start value
+        - Frames within media_start to media_end are incremental
+        - Frames after media_end are set to media_end value
+
+        Args:
+            key_in: Start frame of the key range
+            key_out: End frame of the key range
+            media_start: First valid media frame
+            media_end: Last valid media frame
+
+        Returns:
+            List of source frames with clamped values
+        """
+        key_in = media_start if key_in is None else key_in
+        key_out = media_end if key_out is None else key_out
+        source_frames = []
+        for frame in range(key_in, key_out + 1):
+            if frame < media_start:
+                # Repeat media_start for frames before media range
+                source_frames.append(media_start)
+            elif frame > media_end:
+                # Repeat media_end for frames after media range
+                source_frames.append(media_end)
+            else:
+                # Normal incremental value within media range
+                source_frames.append(frame)
+
+        return source_frames
 
     def get_attr_value(self, id):
         return self.__attrs.get(id)
@@ -87,7 +139,7 @@ class Clip:
                 value_at = frame_values.get(frame)
         else:
             value_at = self.get_attr_value(id)
-        
+
         return value_at
 
     def clear_attr_value_at(self, id, frame):
@@ -127,144 +179,95 @@ class Clip:
 
         self.__attrs[id]["frame_values"] = interpolated_values
 
-    def has_frame_edits(self):
-        if not self.__attrs:
-            return False
-
-        if not self.__local_frame_map:
-            return False
-        
-        default_local_frame_map = self.get_default_local_frame_map()
-        key_in_out_local_frame_map = self.get_key_in_out_local_frame_map()
-
-        if self.__local_frame_map == default_local_frame_map:
-            return False
-        elif self.__local_frame_map == key_in_out_local_frame_map:
-            return False
-        else:
-            return True
+    def are_frame_edits_allowed(self):
+        return not self.__has_key_in_out_edits
 
     def edit_frames(self, edit, local_frame, num_frames):
-        if edit not in (1, -1): return
-        if local_frame <= 0: return
-        if num_frames <= 0: return
-
-        self.edit_local_frame_map(edit, local_frame, num_frames)
-
-    def reset_frames(self):
-        # no need to reset if no changes to frames
-        if self.__local_frame_map == self.get_key_in_out_local_frame_map():
-            return False
-        else:
-            self.__local_frame_map.clear()
-            self.__local_frame_map = self.get_key_in_out_local_frame_map()
-            self.__set_source_frames()
-            self.__set_timewarp_attr_values()
-            return True
-
-    def __update_local_frame_map(self):
-        self.__local_frame_map = self.get_key_in_out_local_frame_map()
-        self.__set_source_frames()
-        self.__set_timewarp_attr_values()
-
-    def edit_local_frame_map(self, edit, local_frame, num_frames):
-        start_frame = self.__attrs.get("media_start_frame")
-        end_frame = self.__attrs.get("media_end_frame")
-        key_in = self.__attrs.get("key_in")
-        key_out = self.__attrs.get("key_out")
-
-        # set default local frame map
-        if not self.__local_frame_map:
-            self.__local_frame_map = self.get_default_local_frame_map()
-
-        clip_frames = list(self.__local_frame_map.values())
-        if local_frame > len(clip_frames):
+        if self.__has_key_in_out_edits:
+            print("frame edits are not allowed when key_in and/or key_out edits are present!")
             return
 
+        if edit not in (1, -1): return
+        if local_frame <= 0 or local_frame > len(self.__source_frames): return
+        if num_frames <= 0: return
+
+        frame_index = local_frame - 1
         if edit == 1: # hold
-            clip_frame = clip_frames[local_frame - 1]
-            for _ in range(num_frames):
-                clip_frames.insert(local_frame, clip_frame)
+            source_frame = self.__source_frames[frame_index]
+            hold_frames = [source_frame] * num_frames
+            # Insert values after the current frame using slice assignment
+            self.__source_frames[frame_index + 1:frame_index + 1] = hold_frames
         elif edit == -1: # drop
-            remove = local_frame - 1
-            del clip_frames[remove:remove + num_frames]
-        
-        self.__local_frame_map = {i + 1: frame for i, frame in enumerate(clip_frames)}
-        self.__set_source_frames()
+            del self.__source_frames[frame_index:frame_index + num_frames]
+
+        self.__update_has_frame_edits()
         self.__set_timewarp_attr_values()
 
-    def get_local_frame_map(self):
-        if not self.__local_frame_map:
-            self.__local_frame_map = self.get_default_local_frame_map()
-            self.__set_source_frames()
-            self.__set_timewarp_attr_values()
-        return self.__local_frame_map
+    def set_source_frames(self, source_frames):
+        if self.__has_key_in_out_edits:
+            print("frame edits are not allowed when key_in and/or key_out edits are present!")
+            return
+        self.__source_frames = source_frames
+        self.__set_timewarp_attr_values()
+        self.__update_has_frame_edits()
 
-    def get_default_local_frame_map(self):
-        start = self.__attrs.get("media_start_frame")
-        end = self.__attrs.get("media_end_frame")
-
-        if None in (start, end):
-            return {}
-
-        media_length = end - start + 1
-        accum = start
-        
-        default_local_frame_map = {}
-        for i, val in enumerate(range(media_length)):
-            default_local_frame_map[i+1] = accum
-            accum += 1
-        
-        return default_local_frame_map
-
-    def get_key_in_out_local_frame_map(self):
-        start = self.__attrs.get("media_start_frame")
-        end = self.__attrs.get("media_end_frame")
+    def reset_frames(self):
+        if self.__has_key_in_out_edits:
+            print("reset frame edits are not allowed when key_in and/or key_out edits are present!")
+            return
         key_in = self.__attrs.get("key_in")
         key_out = self.__attrs.get("key_out")
+        media_start = self.__attrs.get("media_start_frame")
+        media_end = self.__attrs.get("media_end_frame")
+        self.__source_frames = self.__generate_clamped_source_frames(
+            key_in, key_out, media_start, media_end
+        )
 
-        if None in (start, end, key_in, key_out):
-            return {}
+        self.__update_has_frame_edits()
+        self.__set_timewarp_attr_values()
 
-        frame_map = {}
-        clip_frames = []
+    def __update_has_frame_edits(self):
+        if len(self.__source_frames) <= 1:
+            self.__has_frame_edits = False
+            return
 
-        if key_in < start:
-            clip_frames.extend([start] * (start - key_in))
+        for index in range(len(self.__source_frames) - 1):
+            current_frame = self.__source_frames[index]
+            next_frame = self.__source_frames[index + 1]
 
-        mid_start = max(start, key_in)
-        mid_end = min(end, key_out)
-        clip_frames.extend(range(mid_start, mid_end + 1))
+            # Check for held frames (duplicates)
+            if current_frame == next_frame:
+                self.__has_frame_edits = True
+                return
 
-        if key_out > end:
-            clip_frames.extend([end] * (key_out - end))
-        
-        frame_map = {i+1: frame for i, frame in enumerate(clip_frames)}
-        return frame_map
+            # Check for dropped frames (gaps greater than 1)
+            # Normal sequence should increment by 1, so any gap > 1 indicates dropped frames
+            if abs(next_frame - current_frame) > 1:
+                self.__has_frame_edits = True
+                return
 
-    def __set_source_frames(self):
-        start = self.__attrs.get("media_start_frame")
-        self.__source_frames = [frame - start + 1 for frame in self.__local_frame_map.values()]
+        self.__has_frame_edits = False
 
     def get_source_frames(self):
         return self.__source_frames
 
+    def get_timeline_frames(self):
+        dissolve_length = self.__attrs.get("dissolve_length")
+        if dissolve_length is not None and dissolve_length > 0:
+            return self.__source_frames[:-dissolve_length]
+        return self.__source_frames
+
     def __set_timewarp_attr_values(self):
         key_in = self.__attrs.get("key_in")
-        if key_in is None:
-            return
+        if key_in is None: return
 
-        if self.has_frame_edits():
-            self.__timewarp_map.clear()
-            for local_frame, clip_frame in self.__local_frame_map.items():
-                self.__timewarp_map[local_frame] = (key_in, clip_frame)
-                key_in += 1
+        if self.__has_frame_edits:
+            tw_in = self.__source_frames[0]
+            tw_out = tw_in - 1
+            for _ in self.__source_frames:
+                tw_out += 1
+            tw_length = tw_out - tw_in + 1
 
-            tw_keys = [tw[0] for tw in self.__timewarp_map.values()]
-            tw_in = tw_keys[0]
-            tw_out = tw_keys[-1]
-            tw_length = len(tw_keys)
-        
             self.set_attr_value("timewarp_in", tw_in)
             self.set_attr_value("timewarp_out", tw_out)
             self.set_attr_value("timewarp_length", tw_length)
@@ -272,6 +275,20 @@ class Clip:
             self.set_attr_value("timewarp_in", None)
             self.set_attr_value("timewarp_out", None)
             self.set_attr_value("timewarp_length", None)
+
+    def set_media_overlay_info(self, overlay_id, overlay_type, overlay_data):
+        new_media_overlay = (overlay_id, overlay_type, overlay_data)
+        for i, (id_, type_, data_) in enumerate(self.__media_overlays):
+            if isinstance(overlay_id, str) and id_ == overlay_id and \
+                isinstance(overlay_type, int) and type_ == overlay_type:
+                self.__media_overlays[i] = new_media_overlay
+                return
+
+        if isinstance(overlay_id, str) and isinstance(overlay_type, int):
+            self.__media_overlays.append(new_media_overlay)
+
+    def get_media_overlays_info(self):
+        return self.__media_overlays
 
     def get_attrs(self):
         return copy.deepcopy(self.__attrs)

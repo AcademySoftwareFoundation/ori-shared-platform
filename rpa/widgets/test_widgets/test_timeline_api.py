@@ -1,7 +1,7 @@
 import math
 try:
     from PySide2 import QtCore, QtWidgets
-except ImportError:
+except:
     from PySide6 import QtCore, QtWidgets
 from functools import partial
 import os

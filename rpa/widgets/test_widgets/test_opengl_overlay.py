@@ -2,7 +2,7 @@ import sys
 import numpy as np
 try:
     from PySide2 import QtWidgets, QtGui, QtCore, QtOpenGL
-except ImportError:
+except:
     from PySide2 import QtWidgets, QtGui, QtCore, QtOpenGL
 from OpenGL.GL import *
 
@@ -26,7 +26,7 @@ class HtmlTextureRenderer:
 
     def qimage_to_gl_texture(self, image):
         ptr = image.bits()
-        ptr.setsize(image.byteCount())
+        ptr.setsize(image.sizeInBytes())
         img_array = np.array(ptr).reshape((image.height(), image.width(), 4))
 
         tex_id = glGenTextures(1)

@@ -7,12 +7,13 @@ from rpa.session_state.utils import \
 
 class Playlist:
 
-    def __init__(self, id, name):
+    def __init__(self, id, name, cc_uuid_generator):
         self.name = name
         self.__clips = {}
         self.__id = id
         self.__custom_attrs = {}
         self.__active_clip_ids = []
+        self.__cc_uuid_generator = cc_uuid_generator
 
     @property
     def id(self):
@@ -34,10 +35,10 @@ class Playlist:
         self, paths:List[Union[str, Tuple[str, str]]], ids:List[str], index:Optional[int]=None):
         new_clips = {}
         for id, path in zip(ids, paths):
-            if isinstance(path, tuple):
+            if isinstance(path, tuple) or isinstance(path, list):
                 # from a tuple of (video_path, audio_path), take video_path
                 path = path[0]
-            new_clips[id] = Clip(self.__id, id, path)
+            new_clips[id] = Clip(self.__id, id, path, self.__cc_uuid_generator)
 
         old_clip_ids = list(self.__clips.keys())
         new_clip_ids = list(new_clips.keys())

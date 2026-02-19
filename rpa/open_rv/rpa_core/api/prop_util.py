@@ -103,10 +103,11 @@ def convert_to_global_frame(frame, node):
     """
     temp_prop = f"{node}.find.frames"
     set_property(temp_prop, [frame])
-    global_frame_map = rvc.mapPropertyToGlobalFrames("find.frames", 1)
-    if len(global_frame_map) > 0:
-        return global_frame_map[0]
-    return -1
+    try:
+        global_frames = rvc.mapPropertyToGlobalFrames("find.frames", 1)
+        return global_frames[0] if global_frames else -1
+    finally:
+        delete_property(temp_prop)
 
 def get_global_frame(source_node, src_frame):
     if source_node is None:

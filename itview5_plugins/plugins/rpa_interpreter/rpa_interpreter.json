@@ -1,0 +1,7 @@
+{
+  "class_name": "RpaInterpreter",
+  "itview_version": "1.0.0",
+  "author_email": "itview-dev@imageworks.com",
+  "plugin_name": "Rpa Interpreter",
+  "description": "Python Interpreter with RPA. An interactive way to play with RPA"
+}

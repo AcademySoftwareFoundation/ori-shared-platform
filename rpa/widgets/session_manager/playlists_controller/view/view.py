@@ -1,6 +1,6 @@
 try:
     from PySide2 import QtCore, QtGui, QtWidgets
-except ImportError:
+except:
     from PySide6 import QtCore, QtGui, QtWidgets
 from rpa.widgets.session_manager.playlists_controller.view.item_delegate \
     import ItemDelegate

@@ -1,7 +1,8 @@
-import numpy as np
 from rpa.open_rv.rpa_core.api.clip_attr_api_core.clip_attr_api_core \
     import ClipAttrApiCore
 from rv import commands
+from rpa.open_rv.rpa_core.api.clip_attr_api_core.clip_attrs.utils \
+    import get_key_in, get_key_out, validate_cross_dissolve, has_frame_edits
 
 
 class ClipAttrKeyIn:
@@ -32,9 +33,19 @@ class ClipAttrKeyIn:
 
     @property
     def dependent_attr_ids(self):
-        return ["cut_length", "length_diff"]
+        return ["cut_length", "length_diff", "dissolve_start", "dissolve_length"]
 
     def set_value(self, source_group:str, value:int)->bool:
+
+        if has_frame_edits(source_group):
+            print("key_in change is not allowed when frame edits are present")
+            return False
+
+        key_out = get_key_out(source_group)
+        if value > key_out:
+            print("key_in change is not allowed when greater than key_out")
+            return False
+
         if not isinstance(value, int):
             value = self.default_value
 
@@ -42,25 +53,13 @@ class ClipAttrKeyIn:
             commands.newProperty(f"{source_group}_source.custom.keyin", commands.IntType, 1)
 
         commands.setIntProperty(f"{source_group}_source.custom.keyin", [value], True)
+
+        validate_cross_dissolve(source_group)
+
         return True
 
     def get_value(self, source_group:str)->int:
-        cut_in = commands.getIntProperty(f"{source_group}_source.cut.in")[0]
-        smi = commands.sourceMediaInfo(f"{source_group}_source")
-        key_in = smi.get("startFrame") if cut_in == (np.iinfo(np.int32).max * -1) else cut_in
-
-        if not commands.propertyExists(f"{source_group}_source.custom.keyin"):
-            commands.newProperty(f"{source_group}_source.custom.keyin", commands.IntType, 1)
-            commands.setIntProperty(f"{source_group}_source.custom.keyin", [key_in], True)
-            return key_in
-        else:
-            initial_value = commands.getIntProperty(f"{source_group}_source.custom.keyin")
-            start_frame = smi.get("startFrame")
-            if initial_value is None:
-                commands.setIntProperty(f"{source_group}_source.custom.keyin", [start_frame], True)
-
-            key_in = commands.getIntProperty(f"{source_group}_source.custom.keyin")[0]
-            return key_in
+        return get_key_in(source_group)
 
 
 ClipAttrApiCore.get_instance()._add_attr(ClipAttrKeyIn())

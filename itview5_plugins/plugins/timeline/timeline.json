@@ -1,0 +1,7 @@
+{
+    "class_name": "Timeline",
+    "itview_version": "1.0.0",
+    "author_email": "itview-dev@imageworks.com",
+    "plugin_name": "Timeline",
+    "description": "Timeline controls for media playback"
+}

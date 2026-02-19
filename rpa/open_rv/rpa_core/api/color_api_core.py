@@ -5,7 +5,7 @@ from rv import commands as rvc
 from rv import extra_commands as rve
 try:
     from PySide2 import QtCore
-except ImportError:
+except:
     from PySide6 import QtCore
 from rpa.open_rv.rpa_core.api.utils import itview_to_rv
 from rpa.session_state.color_corrections import ColorTimer, Grade
@@ -505,6 +505,15 @@ class ColorApiCore(QtCore.QObject):
                 self.SIG_CCS_MODIFIED.emit(current_clip, None)
         return True
 
+    def set_frame_ro_ccs(self, clip_id, frame, ccs):
+        clip = self.__session.get_clip(clip_id)
+        if clip:
+            clip.color_corrections.set_frame_ro_ccs(frame, ccs)
+        current_clip = self.__session.viewport.current_clip
+        self._refresh(clip_id)
+        if current_clip == clip_id:
+            self.SIG_CCS_MODIFIED.emit(current_clip, None)
+
     def set_rw_ccs(self, rw_ccs):
         for clip_id, ccs in rw_ccs.items():
             clip = self.__session.get_clip(clip_id)
@@ -516,6 +525,15 @@ class ColorApiCore(QtCore.QObject):
             if current_clip == clip:
                 self.SIG_CCS_MODIFIED.emit(current_clip, None)
         return True
+
+    def update_frame_rw_ccs(self, clip_id, frame, ccs):
+        clip = self.__session.get_clip(clip_id)
+        if clip:
+            clip.color_corrections.update_frame_rw_ccs(frame, ccs)
+        current_clip = self.__session.viewport.current_clip
+        self._refresh(clip_id)
+        if current_clip == clip_id:
+            self.SIG_CCS_MODIFIED.emit(current_clip, None)
 
     def get_ro_ccs(self, clip_id:str, frame=None):
         clip = self.__session.get_clip(clip_id)

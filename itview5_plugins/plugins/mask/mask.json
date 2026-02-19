@@ -1,0 +1,7 @@
+{
+    "class_name": "MaskPlugin",
+    "itview_version": "1.0.0",
+    "author_email": "itview-dev@imageworks.com",
+    "plugin_name": "Mask",
+    "description": "Manages masks"
+}

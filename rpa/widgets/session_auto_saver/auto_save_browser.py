@@ -1,7 +1,7 @@
 import os
 from PySide2.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QListWidget, QListWidgetItem,
-    QApplication, QDialog, QMessageBox
+    QApplication, QDialog
 )
 from PySide2.QtCore import Qt, Signal, QDateTime
 

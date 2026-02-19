@@ -1,6 +1,6 @@
 try:
     from PySide2 import QtGui
-except ImportError:
+except:
     from PySide6 import QtGui
 
 WHITE = QtGui.QColor(255.0, 255.0, 255.0)

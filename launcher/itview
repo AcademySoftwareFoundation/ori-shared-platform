@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# export ITVIEW_RV_SEPARATE=1
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+if [[ "$SCRIPT_DIR" == /spfs* ]]; then
+    PY_DIR=`python -BEs -c 'import site; print(site.getsitepackages()[0])'`
+    SPI_ITVIEW_DIR="$PY_DIR/spi_itview/"
+    export ITVIEW_DIR=$PY_DIR/itview
+    export RV_SUPPORT_PATH=$RV_SUPPORT_PATH:$RV_HOME/itview
+    export ITVIEW5_CORE_PLUGINS_CONFIG="$PY_DIR/itview5_plugins/spi_itview5_plugins.cfg"
+else
+    SPI_ITVIEW_DIR="$(dirname "$(realpath "$0")")"
+    ROOT_DIR="$(dirname $SPI_ITVIEW_DIR)"
+
+    export ITVIEW_DIR=$ROOT_DIR/itview
+    export PYTHONPATH="$ITVIEW_DIR:$SPI_ITVIEW_DIR:$PYTHONPATH"
+    export RV_SUPPORT_PATH=$ROOT_DIR/rpa/local_install/lib/open_rv:$ROOT_DIR/local_install/lib/itview
+    # export ITVIEW5_CORE_PLUGINS_CONFIG="$ROOT_DIR/itview5_plugins/spi_itview5_plugins.cfg"
+    export ITVIEW5_CORE_PLUGINS_CONFIG="$ROOT_DIR/itview5_plugins/open_itview5_plugins.cfg"
+fi
+
+
+# show only critical Qt errors in release build
+export QT_LOGGING_RULES="*=false;qt.core.critical=true;qt.core.fatal=true"
+export QTWEBENGINE_DISABLE_SANDBOX=1
+export SUB_EXE="$ITVIEW_DIR/sub/sub.py"
+
+# exec "$SPI_ITVIEW_DIR/main.py" "$@"
+exec "$RV_HOME/bin/rv" -flags ModeManagerPreload=ocio_source_setup "$@"

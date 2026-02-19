@@ -1,7 +1,8 @@
 try:
     from PySide2 import QtCore, QtGui, QtWidgets
-except ImportError:
+except:
     from PySide6 import QtCore, QtGui, QtWidgets
+
 
 class Style(QtWidgets.QProxyStyle):
     def __init__(self):

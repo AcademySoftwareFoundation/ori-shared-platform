@@ -4,7 +4,7 @@ View for Color Picker
 
 try:
     from PySide2 import QtCore, QtWidgets
-except ImportError:
+except:
     from PySide6 import QtCore, QtWidgets
 
 from rpa.widgets.sub_widgets.color_circle import ColorCircle

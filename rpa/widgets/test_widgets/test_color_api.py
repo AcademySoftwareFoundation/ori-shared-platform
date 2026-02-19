@@ -1,6 +1,6 @@
 try:
     from PySide2 import QtCore, QtWidgets
-except ImportError:
+except:
     from PySide6 import QtCore, QtWidgets
 from functools import partial
 from rpa.session_state.color_corrections import Grade, ColorTimer

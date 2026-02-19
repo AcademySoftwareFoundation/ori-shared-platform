@@ -5,7 +5,7 @@
 
 try:
     from PySide2 import QtCore
-except ImportError:
+except:
     from PySide6 import QtCore
 
 qt_resource_data = b"\

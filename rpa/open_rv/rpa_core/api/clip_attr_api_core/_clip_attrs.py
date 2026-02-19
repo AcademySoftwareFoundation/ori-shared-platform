@@ -3,6 +3,7 @@ from rpa.open_rv.rpa_core.api.clip_attr_api_core.clip_attrs import \
     clip_attr_audio_offset, \
     clip_attr_audio_path, \
     clip_attr_audio_type, \
+    clip_attr_cut_length_ft, \
     clip_attr_cut_length, \
     clip_attr_dynamic_rotation, \
     clip_attr_dynamic_scale_x, \
@@ -12,8 +13,6 @@ from rpa.open_rv.rpa_core.api.clip_attr_api_core.clip_attrs import \
     clip_attr_flip_x, \
     clip_attr_flip_y, \
     clip_attr_grayscale, \
-    clip_attr_key_in, \
-    clip_attr_key_out, \
     clip_attr_length_diff, \
     clip_attr_marker, \
     clip_attr_media_end_frame, \
@@ -27,4 +26,8 @@ from rpa.open_rv.rpa_core.api.clip_attr_api_core.clip_attrs import \
     clip_attr_scale_x, \
     clip_attr_scale_y, \
     clip_attr_translate_x, \
-    clip_attr_translate_y
+    clip_attr_translate_y, \
+    clip_attr_key_in, \
+    clip_attr_key_out, \
+    clip_attr_dissolve_start,\
+    clip_attr_dissolve_length

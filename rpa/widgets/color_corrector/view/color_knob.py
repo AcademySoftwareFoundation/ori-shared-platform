@@ -1,7 +1,7 @@
 import math
 try:
     from PySide2 import QtCore, QtGui, QtWidgets
-except ImportError:
+except:
     from PySide6 import QtCore, QtGui, QtWidgets
 from rpa.widgets.sub_widgets import input_line_edit
 from rpa.widgets.color_corrector.view.color_panel import ColorPanel
@@ -11,7 +11,7 @@ from rpa.widgets.color_corrector.utils import FormatNumber
 
 import rpa.widgets.color_corrector.view.resources.resources
 
-LABEL_WIDTH = 70
+LABEL_WIDTH = 100
 
 
 class RGBWidget(QtWidgets.QWidget):
@@ -69,14 +69,16 @@ class ColorKnob(QtWidgets.QWidget):
         self.__label_width = width
         self.__is_color = is_color
         self.__is_default = True
+        self.__default_value = None
 
         self.__current_value = None
         self.__current_rgb = [0.0, 0.0, 0.0]
 
-        self.__label = QtWidgets.QLabel(self.__name, self)
-        self.__label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.__label.setFixedWidth(self.__label_width)
-        self.__label.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.__label_button = QtWidgets.QPushButton(self.__name, self)
+        self.__label_button.setFlat(True)
+        self.__label_button.setCursor(QtCore.Qt.PointingHandCursor)
+        self.__label_button.setFixedWidth(self.__label_width)
+        self.__label_button.clicked.connect(self.__reset_value)
         self.__slider = Slider(self.__hints)
         self.__slider.setFocusPolicy(QtCore.Qt.NoFocus)
         self.__color_panel_button = QtWidgets.QToolButton()
@@ -97,7 +99,7 @@ class ColorKnob(QtWidgets.QWidget):
             30, 1, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
 
         layout = QtWidgets.QHBoxLayout()
-        layout.addWidget(self.__label)
+        layout.addWidget(self.__label_button)
         layout.addWidget(self.__color_panel_button)
         if not self.__is_color:
             layout.addItem(spacer)
@@ -160,6 +162,8 @@ class ColorKnob(QtWidgets.QWidget):
         self.__color_panel.set_color(rgb)
         self.__slider.setValue(rgb[0])
         self.set_default(is_default)
+        if is_default:
+            self.__default_value = rgb
         if not self.__color_panel.isVisible():
             if len(set(self.__current_rgb)) == 1:
                 self.__slider.show()
@@ -172,20 +176,29 @@ class ColorKnob(QtWidgets.QWidget):
         """ This sets sliders which has either int/float
         as their value. """
         self.__slider.setValue(value)
+        self.__current_value = value
+        if is_default:
+            self.__default_value = value
         self.set_default(is_default)
 
     def set_default(self, default):
         self.__is_default = default
         if default:
-            self.__label.setStyleSheet("QLabel {color: rgb(255, 255, 255);}")
+            self.__label_button.setStyleSheet("QPushButton {color: rgb(255, 255, 255);}")
         else:
-            self.__label.setStyleSheet("QLabel {color: rgb(192, 158, 64);}")
+            self.__label_button.setStyleSheet("QPushButton {color: rgb(192, 158, 64);}")
 
     def is_default(self):
         return self.__is_default
 
     @property
     def value(self):
-        if self.__current_rgb:
-            return self.__current_rgb
-        return self.__current_value
+        if self.__current_value is not None:
+            return self.__current_value
+        return self.__current_rgb
+
+    def __reset_value(self):
+        if isinstance(self.__default_value, tuple):
+            self.SIG_COLOR_CHANGED.emit(self.__default_value)
+        else:
+            self.SIG_VALUE_CHANGED.emit(self.__default_value)

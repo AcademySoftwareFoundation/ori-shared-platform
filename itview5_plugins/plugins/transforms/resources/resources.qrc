@@ -1,0 +1,19 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource>
+        <file>./crop_transforms_off.png</file>
+        <file>./crop_transforms_on.png</file>
+        <file>./left.png</file>
+        <file>./link.png</file>
+        <file>./reload_button_16x20.png</file>
+        <file>./remove_key.png</file>
+        <file>./reset_property.png</file>
+        <file>./right.png</file>
+        <file>./set_key_disabled.png</file>
+        <file>./set_key.png</file>
+        <file>./stepEnd28.png</file>
+        <file>./stepStart28.png</file>
+        <file>./transforms_dynamic.png</file>
+        <file>./transforms.png</file>
+    </qresource>
+</RCC>

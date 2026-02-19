@@ -1,0 +1,66 @@
+***********************
+Local Install Workflow:
+***********************
+
+1. Open a new terminal
+
+2. Set shot to a show,
+>> setshot ccf/home
+
+3. To avoid interference from previoulsy published SPK, make sure to update Itview5's spk version to be something that is not yet published.
+    i) open ./build_scripts/spk/itview5.spk.yaml
+    ii) change the version mentioned in line 1
+
+4. Run the following shell script to build the Itview5 spk,
+>> ./build_scripts/spk/build_itview5_spk.sh
+
+5. Enter into the itview5 spk,
+>> spk env itview5/[VERSION]/[HASH]
+   When using resolvo: >> spk env --solver-to-run resolvo itview5/[VERSION]/[HASH]
+
+6. Install RV Packages and launch spi-itview,
+>> ./build_scripts/local_install.sh; ./spi_itview/itview
+
+7. If you want to launch open-itview5,
+>> ./build_scripts/local_install.sh; ./itview/itview
+
+8. If you want to launch RV with RPA widgets,
+>> ./rpa/build_scripts_spi/local_install.sh; ./rpa/open_rv/rv_w_rpa
+
+
+*********************
+SPK Install Workflow:
+*********************
+
+1. Open a new terminal
+
+2. Set shot to a show,
+>> setshot ccf/home
+
+3. To avoid interference from previoulsy published SPK, make sure to update Itview5's spk version to be something that is not yet published.
+    i) open ./build_scripts/spk/itview.spk.yaml
+    ii) change the version mentioned in line 1
+
+4. Run the following shell script with the argument "install" to build and install the Itview5 spk,
+>> ./build_scripts/spk/build_itview5_spk.sh install
+
+5. Enter into the itview5 spk,
+>> spk env itview5/[VERSION]/[HASH]
+   When using resolvo: >> spk env --solver-to-run resolvo itview5/[VERSION]/[HASH]
+
+6. Launch spi-itview,
+>> itview5
+
+7. Launch open-itview,
+>> open_itview5
+
+
+**********************
+Windows install notes:
+**********************
+
+>> build_scripts/pkgs/rebuild_pkgs.sh (bash environment assumed while running this - can be done on linux system)
+
+This will create a itview-XX.rvpkg and itview-XX.whl files. Install them using openrv and pip respectively
+
+** Note: itview_session_io plugin crashes itview, needs to be disabled

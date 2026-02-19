@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from functools import partial
 try:
     from PySide2 import QtCore, QtGui, QtWidgets
-except ImportError:
+except:
     from PySide6 import QtCore, QtGui, QtWidgets
 
 

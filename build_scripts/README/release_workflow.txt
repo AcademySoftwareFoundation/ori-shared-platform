@@ -1,0 +1,69 @@
+***************
+Release Process
+***************
+
+1. Open a new terminal
+
+2. Set shot to a show,
+>> setshot ccf/home
+
+3. To avoid interference from previoulsy published SPK, make sure to update RPA's and Itview5's spks version to be something that is not yet published.
+    i) open ./build_scripts/spk/itview.spk.yaml
+    ii) change the version mentioned in line 1
+
+4. Run the following shell script with the argument "install" to build Itview5 spk,
+>> ./build_scripts/spk/build_itview5_spk.sh install
+
+5. Enter into the itview5 spk,
+>> spk env itview5/[VERSION]/[HASH]
+
+6. Launch spi-itview,
+>> itview5
+
+7. Exit from SPK env
+>> exit
+
+8. Publish rpa and itview5 spks,
+>> spk publish itview5/[VERSION]/[HASH]
+
+9. Update spawn target to point to this new version.
+Update the itview.spawn.yaml file with the new version and run commit it
+>> spawn commit ./build_scripts/spk/itview5.spawn.yaml spi/home/itview5:<VERSION_NUMBER>
+
+10. If you intend to make this version for production
+(i.e be the default one when someone calls "itview5" on ths shell),
+you can tag this spawn target as the "latest" version:
+>> spawn tag spi/home/itview5:<VERSION_NUMBER> spi/home/itview5:latest
+
+11. Also tag the version as current. (For good measure :P)
+>> spawn tag spi/home/itview5:<VERSION_NUMBER> spi/home/itview5:current
+
+12. If you want to release as a 'beta' version, do the following:
+>> spawn tag spi/home/itview5:<VERSION_NUMBER> spi/home/itview5:beta
+
+13. Now the end users can do the following to test the beta version
+>> itview5 --appver beta
+
+14. They can also launch any valid version like
+>> itview5 --appver <VERSION_NUMBER>
+
+15. List of available versions can be queried with
+>> itview5 --versions
+
+16.Create release branch,
+>> git checkout -b release_va.b.c
+>> git commit -m "Add the release notes"
+>> git push
+
+17. Git tag the commit,
+>> git tag -a va.b.c (Add the release notes as the tag's message)
+>> git push origin va.b.c
+
+18. Create a MR and merge to Itview5
+
+19. Send release notes
+
+20. Add the release notes under Confluence: Infra Apps > Release Notes with release date and notes
+
+21. Update RPA documentation if necessary by following,
+rpa/build_scripts_spi/README.txt

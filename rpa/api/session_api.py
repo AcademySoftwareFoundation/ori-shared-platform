@@ -10,7 +10,7 @@ Attrs.
 
 try:
     from PySide2 import QtCore
-except ImportError:
+except:
     from PySide6 import QtCore
 from typing import List, Optional, Tuple, Union, Any
 from rpa.delegate_mngr import DelegateMngr
@@ -122,6 +122,9 @@ class SessionApi(QtCore.QObject):
             (bool) : True if success False otherwise
         """
         return self.__delegate_mngr.call(self.set_bg_playlist, [id])
+
+    def check_fg_bg_sync(self):
+        return self.__delegate_mngr.call(self.check_fg_bg_sync)
 
     def get_bg_playlist(self)->Optional[str]:
         """
@@ -318,6 +321,26 @@ class SessionApi(QtCore.QObject):
         """
         return self.__delegate_mngr.call(self.get_bg_mode)
 
+    def set_source_frame_lock(self, enable_source_lock):
+        """
+        Set background sync mode to source frame lock if true,
+        otherwise sets sync mode to frame lock
+
+        Args:
+            enable_source_lock (bool): whether or not to enable source lock
+        """
+        self.__delegate_mngr.call(self.set_source_frame_lock, [enable_source_lock])
+
+    def get_source_frame_lock(self)->bool:
+        """
+        Get True if background sync mode is source frame locked.
+        If false, it is frame locked
+
+        Returns:
+            bool: is background sync mode source frame locked
+        """
+        return self.__delegate_mngr.call(self.get_source_frame_lock)
+
     def set_mix_mode(self, mode):
         """
         Set the Background Mix Mode to be used in the session.
@@ -367,9 +390,9 @@ class SessionApi(QtCore.QObject):
         Creates clips with the given paths in the playlist of the given
         playlist id. The paths can also be data-base ids or web-urls as long
         as mechanisms for the core application to find the media file from the
-        given paths are in place. The created playlists will be inserted into
-        the given index if provided otherwise the clips will be inserted at
-        the bottom of the playlist. If ids are provided, they will be used to
+        given paths are in place. The created clips will be inserted into
+        the given index if provided, otherwise the clips will be inserted at
+        the end of the playlist. If ids are provided, they will be used to
         identify the playlists. Make sure the provided ids are uniqiue.
         Recommended to use the following to generate these ids,
 
@@ -597,16 +620,15 @@ class SessionApi(QtCore.QObject):
         """
         return self.__delegate_mngr.call(self.reset_frames, [clip_id])
 
-    def has_frame_edits(self, clip_id:str)->bool:
+    def are_frame_edits_allowed(self, clip_id:str)->bool:
         """
-        Returns True if the clip has any frame edits otherwise False
-        The frame edits are confined to frame edits only and excludes key_in and key_out changes.
-        Note: Once clip has any frame edits, clip's key_in attribute can not change.
+        Returns True if frame edits are allowed on the clip, otherwise False.
+        Frame edits are allowed only if key_in and key_out edits are not present.
 
         Returns:
-            (bool): True if clip has frame edits, otherwise False
+            (bool): True if frame edits are allowed, otherwise False
         """
-        return self.__delegate_mngr.call(self.has_frame_edits, [clip_id])
+        return self.__delegate_mngr.call(self.are_frame_edits_allowed, [clip_id])
 
 
     ###########################################################################
@@ -1141,3 +1163,86 @@ class SessionApi(QtCore.QObject):
             None: This method does not return a value.
         """
         return self.__delegate_mngr.call(self.core_preferences)
+
+    def set_media_overlay(
+            self, clip_id:str, overlay_type:int, overlay_data:dict, overlay_id:Optional[str]=None):
+        """
+        Set burn-in like overlay to the media specified by the clip_id.
+        This type of overlay will not be movable nor erasable from the viewport,
+        and treated as a part of the image, and it can be toggled on/off only.
+        Setting the media overlay again given the same clip_id, overlay_id, and overlay_type,
+        will overwrite the existing media overlay if it exists.
+        If overlay_id is given, this overlay_id will be used to identify the media overlay,
+        else a new overlay_id will be provided upon the given overlay being set.
+        The overlay properties or metadata needed to create the media overlay
+        is provided by the overlay_data.
+        Returns the newly created or given overlay_id if successful, else None.
+
+        Args:
+            clip_id (str): Id of the Clip.
+            overlay_type (int): Type of the overlay being set.
+                0 - do not use; this will be ignored
+                1 - text
+                2 - rect
+                any other int values will be ignored.
+            overlay_data (dict): Properties needed for setting overlay
+                based on the overlay_type provided.
+                ie. text_media_overlay = {
+                        "text": "hello world"
+                        "font_path": "/path/to/font/file/some_font.ttf"
+                        "size": 24
+                        "color": (0.0, 0.0, 1.0, 1.0)
+                        "position": (0.0, 0.0)
+                    }
+                ie. rect_media_overlay = {
+                        "width": 500
+                        "height": 250
+                        "color": (1.0, 0.0, 1.0, 1.0)
+                        "position": (0.3, 0.5)
+                    }
+        Kwargs:
+            overlay_id (Optional[str]): Id of the overlay being set.
+
+        Returns:
+            (str): newly created or provided overlay_id as a string, or None
+        """
+        if overlay_id is None or overlay_id == "":
+            overlay_id = uuid.uuid4().hex
+
+        return self.__delegate_mngr.call(
+            self.set_media_overlay, [clip_id, overlay_type, overlay_data, overlay_id])
+
+    def toggle_media_overlay(self, clip_id:str, overlay_id:str, overlay_type:int, active:bool):
+        """
+        Toggle a clip's media overlay defined by the clip_id, overlay_id, and overlay_type if it exists.
+        Must provide which overlay_type is being toggled active/inactive.
+        If overlay_type is set to 0, this will toggle all existing media overlays
+        for the given clip_id, regardless of what overlay_id is provided.
+        When active, the specified media overlay will be shown, otherwise be hidden.
+
+        Args:
+            clip_id (str): Id of the Clip
+            overlay_id (str): Id of the media overlay being toggled
+            overlay_type (int): Type of the overlay being set
+                0 - all existing text/rect overlays
+                1 - text
+                2 - rect
+                any other int values will be ignored
+            active (bool): True to set it active, False for inactive
+        """
+        return self.__delegate_mngr.call(
+            self.toggle_media_overlay, [clip_id, overlay_id, overlay_type, active])
+
+    def get_media_overlays_info(self, clip_id:str):
+        """
+        Get all existing media overlay info of a clip given the clip_id.
+        The media overlay info exist as a tuple of:
+        (overlay_id, overlay_type, overlay_data) as given by set_media_overlay()
+
+        Args:
+            clip_id (str): Id of the clip
+
+        Returns:
+            list[Tuple[str, int, dict]]: all existing overlays info of the clip
+        """
+        return self.__delegate_mngr.call(self.get_media_overlays_info, [clip_id])

@@ -1,6 +1,6 @@
 try:
     from PySide2 import QtCore, QtWidgets
-except ImportError:
+except:
     from PySide6 import QtCore, QtWidgets
 from functools import partial
 import os
@@ -41,7 +41,7 @@ class TestDelegateMngr:
         return self.__view
 
     def __run_test(self):
-        
+
         if not TEST_MEDIA_DIR:
             print("++++++++")
             print("Kindly set TEST_MEDIA_DIR environment variable to point to directory with test media!")

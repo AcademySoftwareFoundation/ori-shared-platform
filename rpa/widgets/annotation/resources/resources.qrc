@@ -10,5 +10,7 @@
         <file>./show_annotations_on.png</file>
         <file>./next_annotation.png</file>
         <file>./prev_annotation.png</file>
+        <file>./ghost.png</file>
+        <file>./hold.png</file>
     </qresource>
 </RCC>

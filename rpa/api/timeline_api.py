@@ -11,7 +11,7 @@ current timeline sequence and vice versa.
 from typing import List, Optional, Tuple
 try:
     from PySide2 import QtCore
-except ImportError:
+except:
     from PySide6 import QtCore
 from rpa.delegate_mngr import DelegateMngr
 
@@ -53,7 +53,7 @@ class TimelineApi(QtCore.QObject):
         """
         return self.__delegate_mngr.call(self.goto_frame, [frame])
 
-    def get_current_frame(self)->int:
+    def get_current_frame(self, wait=False)->int:
         """
         Get the current frame of the timeline.
         If no current clip is present then 0 is returned.
@@ -61,10 +61,15 @@ class TimelineApi(QtCore.QObject):
         Note that the frame number returned is relative to the timeline
         sequence and not relative to individual clips.
 
+        Args:
+            wait (bool): If True, waits for the real current frame number. If
+            False, returns the cached frame value, which may differ slightly
+            from the actual current frame.
+
         Returns:
             (int) : Current frame
         """
-        return self.__delegate_mngr.call(self.get_current_frame)
+        return self.__delegate_mngr.call(self.get_current_frame, [wait])
 
     def get_frame_range(self)->Tuple[int, int]:
         """
@@ -84,7 +89,11 @@ class TimelineApi(QtCore.QObject):
         """
         Get the frames relative to the current timeline sequence that
         corresponds to the given clip frames. If frames are not given, then
-        all the frames in the current timeline sequence will be returned.
+        all the frames  in the current timeline sequence will be returned.
+        For example: get_seq_frames(clip_id, [1001, 1005]) -> will return
+                     [(1001, [1,2,3,4], 1005, [8])]
+                     The reason 1001, returns  a list of four seq frames, is because
+                     1001 is held for 4 frames (Frame hold).
 
         Args:
             clip_id (str):
@@ -97,8 +106,8 @@ class TimelineApi(QtCore.QObject):
         Returns:
             List[Tuple[int, List[int]]]:
                 List of tuples in which first element in the tuple is the clip frame, and
-                the second element is a list of sequence frames associated with the clip frame
-        
+                the second element is a list of sequence frames associated with the clip frame.
+
         Examples of how the returned list will look like:
 
         .. code-block:: python

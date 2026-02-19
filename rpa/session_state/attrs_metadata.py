@@ -130,6 +130,9 @@ class AttrsMetadata:
     def is_keyable(self, id):
         return self.__metadata.get(id).get("is_keyable")
 
+    def get_custom_property(self, id, custom_property):
+        return self.__metadata.get(id).get(custom_property)
+
     def get(self, attr_id, metadata_id):
         meta_data = self.__metadata.get(attr_id)
         if meta_data is None:

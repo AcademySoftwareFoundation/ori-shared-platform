@@ -1,11 +1,12 @@
 try:
     from PySide2 import QtCore, QtWidgets
-except ImportError:
+except:
     from PySide6 import QtCore, QtWidgets
 from functools import partial
 import uuid
 from collections import deque
 import os
+from rpa.utils.rv_overlays import OverlayType, RectOverlay, TextOverlay
 
 
 TEST_MEDIA_DIR = os.environ.get("TEST_MEDIA_DIR")
@@ -25,6 +26,7 @@ class TestSessionApi:
     def __init__(self, rpa, parent_widget):
         self.__rpa = rpa
         self.__session_api = self.__rpa.session_api
+        self.__timeline_api = self.__rpa.timeline_api
         self.__test_cnt = 0
 
         self.__view = QtWidgets.QWidget(parent_widget)
@@ -53,7 +55,7 @@ class TestSessionApi:
         return self.__view
 
     def __run_test(self):
-        
+
         if not TEST_MEDIA_DIR:
             print("++++++++")
             print("Kindly set TEST_MEDIA_DIR environment variable to point to directory with test media!")
@@ -149,11 +151,14 @@ class TestSessionApi:
             partial(self.__test_36),
             partial(self.__test_37),
             partial(self.__test_38),
-            partial(self.__test_39),
+            partial(self.__frame_edits),
+            partial(self.__cross_dissolve),
             partial(self.__clear_session),
             partial(self.__create_clips),
             partial(self.__custom_attrs_1),
             partial(self.__clear_session),
+            partial(self.__set_header, "8 Setting Media Overlays"),
+            partial(self.__test_40)
         ]
         func = tests[self.__test_cnt]
         func()
@@ -674,24 +679,104 @@ class TestSessionApi:
         ]
         self.__session_api.set_attr_values(attr_values)
 
-    def __test_39(self):
-        self.__label.setText("Frame edits - hold")
+    def __get_frame_count(self):
+        """Helper to get current frame count from timeline."""
+        frame_range = self.__timeline_api.get_frame_range()
+        return frame_range[1] - frame_range[0] + 1
+
+    def __frame_edits(self):
+        """Test key in and key out frame edits with various scenarios."""
+        self.__label.setText("Key in and key out edits")
         playlist = self.__session_api.get_playlists()[0]
-        clip = self.__session_api.get_current_clip()
-        has_frame_edits = self.__session_api.has_frame_edits(clip)
-        test_eq("has frame edits False", False, has_frame_edits)
-        self.__session_api.edit_frames(clip, 1, 1, 5)
-        has_frame_edits = self.__session_api.has_frame_edits(clip)
-        test_eq("has frame edits True", True, has_frame_edits)
-        self.__session_api.edit_frames(clip, -1, 1, 5)
-        has_frame_edits = self.__session_api.has_frame_edits(clip)
-        test_eq("has frame edits False", False, has_frame_edits)
-        self.__session_api.edit_frames(clip, 1, 1, 10)
-        has_frame_edits = self.__session_api.has_frame_edits(clip)
-        test_eq("has frame edits True", True, has_frame_edits)
-        self.__session_api.reset_frames(clip)
-        has_frame_edits = self.__session_api.has_frame_edits(clip)
-        test_eq("has frame edits False", False, has_frame_edits)
+        self.__session_api.set_active_clips(playlist, [])
+        clips = self.__session_api.get_clips(playlist)
+
+
+        def get_clip_bounds(clip):
+            """Helper to get key_in and key_out values for a clip."""
+            return (
+                self.__session_api.get_attr_value(clip, "key_in"),
+                self.__session_api.get_attr_value(clip, "key_out")
+            )
+
+        def modify_clip_bounds(clip, key_in_offset, key_out_offset):
+            """Helper to modify clip bounds and return new frame count."""
+            key_in, key_out = get_clip_bounds(clip)
+            self.__session_api.set_attr_values([
+                (playlist, clip, "key_in", key_in + key_in_offset),
+                (playlist, clip, "key_out", key_out + key_out_offset)
+            ])
+            return self.__get_frame_count()
+
+        # Test 1: Modify clip_1 bounds without frame edits - should change timeline
+        clip_1 = clips[0]
+        initial_frame_count = self.__get_frame_count()
+        new_frame_count = modify_clip_bounds(clip_1, -100, 50)
+        test_eq("Number of Frames", initial_frame_count + 150, new_frame_count)
+        test_eq("Frame Edits Allowed", False, self.__session_api.are_frame_edits_allowed(clip_1))
+
+        # Test 2: Apply frame edits to clip_2, then modify bounds - should not change timeline
+        clip_2 = clips[1]
+        frame_count_before_edits = self.__get_frame_count()
+        self.__session_api.edit_frames(clip_2, 1, 1, 100)
+        self.__session_api.edit_frames(clip_2, -1, 1, 50)
+        frame_count_after_edits = self.__get_frame_count()
+        test_eq("Number of Frames", frame_count_before_edits + 50, frame_count_after_edits)
+
+        # Modify bounds after frame edits - timeline should remain unchanged
+        frame_count_before_modify = self.__get_frame_count()
+        modify_clip_bounds(clip_2, -100, 50)
+        frame_count_after_modify = self.__get_frame_count()
+        test_eq("Number of Frames", frame_count_before_modify, frame_count_after_modify)
+        test_eq("Frame Edits Allowed", True, self.__session_api.are_frame_edits_allowed(clip_2))
+
+        # Test 3: Reset frame edits, then modify bounds - should change timeline again
+        self.__session_api.reset_frames(clip_2)
+        test_eq("Number of Frames", frame_count_before_edits, self.__get_frame_count())
+
+        frame_count_before_final_modify = self.__get_frame_count()
+        modify_clip_bounds(clip_2, -100, 50)
+        frame_count_after_final_modify = self.__get_frame_count()
+        test_eq("Number of Frames", frame_count_before_final_modify + 150, frame_count_after_final_modify)
+        test_eq("Frame Edits Not Allowed", False, self.__session_api.are_frame_edits_allowed(clip_2))
+
+    def __cross_dissolve(self):
+        self.__label.setText("Cross Dissolve")
+        playlist = self.__session_api.get_playlists()[0]
+        self.__session_api.set_active_clips(playlist, [])
+        clips = self.__session_api.get_clips(playlist)
+        clip_1 = clips[0]
+        clip_2 = clips[1]
+        old_frame_count = self.__get_frame_count()
+        self.__session_api.set_attr_values([
+            (playlist, clip_1, "dissolve_length", 100)
+        ])
+        new_frame_count = self.__get_frame_count()
+        test_eq("Number of Frames", old_frame_count - 100, new_frame_count)
+
+    def __test_40(self):
+        self.__label.setText("Set/Toggle media overlays")
+        playlist = self.__session_api.get_playlists()[0]
+        vm = "solid,red=1.0,green=1.0,blue=1.0,start=1,end=1,width=720,height=480.movieproc"
+        vm_clip_id = self.__session_api.create_clips(playlist, [vm])[0]
+        text_overlay = TextOverlay(
+            text="hello world", font_path="", size=8,
+            color=(0.0, 0.0, 1.0, 1.0), position = (0.5, 0.5)
+            )
+        rect_overlay = RectOverlay(
+            width = 200, height = 100,
+            color = (1.0, 0.0, 0.0, 0.5), position = (0.0, 0.0)
+        )
+        text_overlay_id = self.__rpa.session_api.set_media_overlay(
+            vm_clip_id, 1, text_overlay.to_json())
+        rect_overlay_id = self.__rpa.session_api.set_media_overlay(
+            vm_clip_id, 2, rect_overlay.to_json())
+        self.__session_api.toggle_media_overlay(vm_clip_id, text_overlay_id, 1, False)
+        self.__session_api.toggle_media_overlay(vm_clip_id, rect_overlay_id, 2, False)
+        self.__session_api.toggle_media_overlay(vm_clip_id, text_overlay_id, 1, True)
+        self.__session_api.toggle_media_overlay(vm_clip_id, rect_overlay_id, 2, True)
+        overlays_info = self.__session_api.get_media_overlays_info(vm_clip_id)
+        test_eq("clip media overlays count", 2, len(overlays_info))
 
     def __create_clips(self):
         self.__label.setText("Create Clips")

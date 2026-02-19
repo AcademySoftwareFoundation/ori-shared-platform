@@ -81,6 +81,8 @@ class Session:
         self.__id = os.environ.get("RPA_SESSION_ID", uuid.uuid4().hex)
         self.__playlist_uuid_generator = SequentialUUIDGenerator(
             os.environ.get("PLAYLIST_UUID_SEED", uuid.uuid4().hex))
+        self.__cc_uuid_generator = SequentialUUIDGenerator(
+            os.environ.get("CC_UUID_SEED", uuid.uuid4().hex))
 
         self.__playlists = {}
         self.__deleted_playlists = {}
@@ -120,11 +122,10 @@ class Session:
 
     def create_playlists(
         self, names:List[str], index:Optional[int]=None, ids=None):
-
         if ids is None: ids = [uuid.uuid4().hex for _ in  names]
         new_playlists = {}
         for id, name in zip(ids, names):
-            new_playlists[id] = Playlist(id, name)
+            new_playlists[id] = Playlist(id, name, self.__cc_uuid_generator)
 
         old_playlist_ids = list(self.__playlists.keys())
         new_playlist_ids = list(new_playlists.keys())
@@ -229,7 +230,7 @@ class Session:
         if len(self.__playlists.keys()) > 0:
             return
         pl_id = self.__playlist_uuid_generator.next_uuid()
-        playlist = Playlist(pl_id, "New Playlist")
+        playlist = Playlist(pl_id, "New Playlist", self.__cc_uuid_generator)
         self.__playlists[pl_id] = playlist
         self.__viewport.fg = pl_id
 
@@ -310,6 +311,8 @@ class Session:
         bg_playlist = self.get_playlist(self.__viewport.bg)
         if len(fg_active_clip_ids) == 0:
             bg_playlist.set_active_clips([])
+        elif len(fg_active_clip_ids) == len(clip_ids) and self.__viewport.source_frame_lock == 0:
+            bg_playlist.set_active_clips(bg_playlist.clip_ids)
         else:
             fg_sel_clip_indexes = []
             for clip_id in fg_active_clip_ids:

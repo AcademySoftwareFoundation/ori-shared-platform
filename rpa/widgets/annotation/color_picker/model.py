@@ -5,7 +5,7 @@ Model for Color Picker
 from collections import deque
 try:
     from PySide2 import QtGui
-except ImportError:
+except:
     from PySide6 import QtGui
 
 

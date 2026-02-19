@@ -87,6 +87,7 @@ class Stroke:
     depth: float = 0.0
     color: Color = field(default_factory=Color)
     points: List[Point] = field(default_factory=list)
+    cont: bool = False
     __custom_attrs: dict = field(default_factory=dict)
 
     def set_custom_attr(self, attr_id, value):
@@ -116,6 +117,7 @@ class Stroke:
             "depth": self.depth,
             "color": self.color.__getstate__(),
             "points": [point.__getstate__() for point in self.points],
+            "cont": self.cont,
             "class": self.__class__.__name__
         }
 
@@ -126,6 +128,7 @@ class Stroke:
         self.depth = state["depth"]
         self.color = Color().__setstate__(state["color"])
         self.points = [Point().__setstate__(point) for point in state["points"]]
+        self.cont = state["cont"]
         return self
 
 
@@ -236,7 +239,10 @@ class Annotations:
         return frames
 
     def set_ro_annotations(self, frame, annotations):
-        self.ro_annos[frame] = annotations
+        if annotations:
+            self.ro_annos[frame] = annotations
+        else:
+            self.ro_annos.pop(frame, None)
 
     def set_rw_annotation(self, frame, annotation):
         self.rw_annos[frame] = annotation

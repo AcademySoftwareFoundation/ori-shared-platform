@@ -37,6 +37,7 @@ class OTIOReader(object):
         keyable_attrs_to_set = []
         rw_annos = {}
         rw_ccs = {}
+        clip_colors = {}
 
         attrs = self.__session_api.get_attrs()
         rw_attrs = self.__session_api.get_read_write_attrs()
@@ -68,6 +69,8 @@ class OTIOReader(object):
                     clip_ids.append(clip_id)
                     clip_paths.append(clip_media)
                     clip_attr_values = clip.metadata[C.ITVIEW_METADATA_KEY]
+                    if clip.color:
+                        clip_colors[clip_id] = clip.color.to_rgba_float_list()
 
                     for attr_id, value in clip_attr_values.items():
                         if attr_id in attrs:
@@ -91,7 +94,12 @@ class OTIOReader(object):
                                         (frame, ColorCorrection().__setstate__(converted_cc)))
 
                 self.__session_api.create_clips(playlist_id, clip_paths, ids=clip_ids)
+            
+            # Clip Color
+            for clip_id, color in clip_colors.items():
+                self.__session_api.set_custom_clip_attr(clip_id, "clip_color", color)
 
+            # Attrs
             if rw_attrs_to_set:
                 self.__session_api.set_attr_values(rw_attrs_to_set)
             if keyable_attrs_to_set:

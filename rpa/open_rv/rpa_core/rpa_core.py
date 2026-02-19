@@ -9,16 +9,22 @@ from rpa.open_rv.rpa_core.api.viewport_api_core import ViewportApiCore
 class RpaCore:
 
     def __init__(self):
-        session = Session()
-        self.__annotation_api = AnnotationApiCore(session)
+        self.__session = Session()
+        self.__annotation_api = AnnotationApiCore(self.__session)
         self.__session_api = SessionApiCore(
-            session, self.__annotation_api)
-        self.__color_api = ColorApiCore(session)
+            self.__session, self.__annotation_api)
+        self.__color_api = ColorApiCore(self.__session)
         self.__timeline_api = TimelineApiCore(
-            session, self.__session_api)
+            self.__session, self.__session_api)
         self.__viewport_api = ViewportApiCore(
-            session, self.__session_api,
+            self.__session, self.__session_api,
             self.__annotation_api, self.__color_api)
+
+        self.__session_api.set_timeline_api(self.__timeline_api)
+
+    @property
+    def session(self):
+        return self.__session
 
     @property
     def session_api(self):

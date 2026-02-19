@@ -1,6 +1,6 @@
 try:
     from PySide2 import QtCore, QtGui, QtWidgets
-except ImportError:
+except:
     from PySide6 import QtCore, QtGui, QtWidgets
 from rpa.widgets.background_modes.actions import Actions
 
@@ -8,7 +8,7 @@ from rpa.widgets.background_modes.actions import Actions
 class BackgroundModes(QtCore.QObject):
     def __init__(self, rpa, main_window):
         self.__rpa = rpa
-        self.__session_api = self.__rpa.session_api        
+        self.__session_api = self.__rpa.session_api
 
         self.actions = Actions()
         self.__connect_signals()
@@ -39,11 +39,16 @@ class BackgroundModes(QtCore.QObject):
         self.actions.wipe.triggered.connect(self.__toggle_wipe)
         self.actions.swap_background.triggered.connect(self.__swap_background)
 
-        self.actions.none_mix_mode.triggered.connect(lambda: self.__toggle_mix_mode(0))
-        self.actions.add_mix_mode.triggered.connect(lambda: self.__toggle_mix_mode(1))
-        self.actions.diff_mix_mode.triggered.connect(lambda: self.__toggle_mix_mode(2))
-        self.actions.sub_mix_mode.triggered.connect(lambda: self.__toggle_mix_mode(3))
-        self.actions.over_mix_mode.triggered.connect(lambda: self.__toggle_mix_mode(4))
+        self.actions.none_mix_mode.triggered.connect(lambda: self.toggle_mix_mode(0))
+        self.actions.add_mix_mode.triggered.connect(lambda: self.toggle_mix_mode(1))
+        self.actions.diff_mix_mode.triggered.connect(lambda: self.toggle_mix_mode(2))
+        self.actions.sub_mix_mode.triggered.connect(lambda: self.toggle_mix_mode(3))
+        self.actions.over_mix_mode.triggered.connect(lambda: self.toggle_mix_mode(4))
+
+        self.actions.frame_lock.triggered.connect(lambda _: self.set_sync_mode(False))
+        self.actions.source_frame_lock.triggered.connect(lambda _: self.set_sync_mode(True))
+
+        self.actions.sync_mode_check.triggered.connect(self.__session_api.check_fg_bg_sync)
 
     def __turn_off_background(self):
         self.__session_api.set_bg_playlist(None)
@@ -82,6 +87,20 @@ class BackgroundModes(QtCore.QObject):
         if mode>0:
             self.__uncheck_bg_mode_checkboxes()
 
+        self.__set_mix_mode_ui(mode)
+
+    def __set_mix_mode_ui(self, mode):
+        if mode == 0:
+            self.actions.none_mix_mode.setChecked(True)
+        elif mode == 1:
+            self.actions.add_mix_mode.setChecked(True)
+        elif mode == 2:
+            self.actions.diff_mix_mode.setChecked(True)
+        elif mode == 3:
+            self.actions.sub_mix_mode.setChecked(True)
+        elif mode == 4:
+            self.actions.over_mix_mode.setChecked(True)
+
     def __bg_playlist_changed(self, id):
         if id is None:
             self.__enable_actions(False)
@@ -90,8 +109,11 @@ class BackgroundModes(QtCore.QObject):
             self.__enable_actions(True)
             self.__bg_mode_changed(True, self.__session_api.get_bg_mode())
 
-    def __toggle_mix_mode(self, mode):
+    def toggle_mix_mode(self, mode):
         self.__session_api.set_mix_mode(mode)
+
+    def set_sync_mode(self, state):
+        self.__session_api.set_source_frame_lock(state)
 
     def __enable_actions(self, state):
         for action in [

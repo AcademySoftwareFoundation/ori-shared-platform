@@ -1,0 +1,88 @@
+# pkg: itview5/0.8.0   # official version
+pkg: itview5/9.9.9     # dev version
+api: v0/package
+
+sources:
+    - path: ../../
+
+build:
+  options:
+    - pkg: python
+    - pkg: openrv
+    - pkg: opencolorio/2.3
+    - pkg: python-opentimelineio/0.18.1
+    - pkg: python-pyside2/5.15
+    - pkg: python-six/1.16
+    - pkg: zlib/1.2
+    - pkg: python-numpy
+    - pkg: openimageio/3.0
+    - pkg: python-scipy/1.13
+    - pkg: python-sphinx/7.2.6
+    - pkg: playwright/1.55.0
+    - pkg: shotgrid-utils
+    - pkg: edbotice/6.0.0+r.4
+    - pkg: vfobot
+    - pkg: filesequence
+    - pkg: python-pyyaml
+    - pkg: itview-vnp3browser
+    - pkg: sg-note-service/2.0.2
+    - pkg: resolution-table
+    - pkg: python-stomp-py
+  variants:
+    - { distro: rocky,  python: "3.10.10", python-numpy: 1.26, openrv: 2.2 }
+
+  script:
+    - ./build_scripts/spk/itview5_spk_script.sh
+
+install:
+  requirements:
+    - pkg: python
+      fromBuildEnv: Binary
+    - pkg: openrv
+      fromBuildEnv: Binary
+    - pkg: opencolorio
+      fromBuildEnv: Binary
+    - pkg: python-opentimelineio
+      fromBuildEnv: Binary
+    - pkg: python-pyside2
+      fromBuildEnv: Binary
+    - pkg: python-six
+      fromBuildEnv: Binary
+    - pkg: zlib
+      fromBuildEnv: Binary
+    - pkg: python-numpy
+      fromBuildEnv: Binary
+    - pkg: openimageio
+      fromBuildEnv: Binary
+    - pkg: python-scipy
+      fromBuildEnv: Binary
+    - pkg: python-sphinx
+      fromBuildEnv: Binary
+    - pkg: playwright
+      fromBuildEnv: Binary
+    - pkg: shotgrid-utils
+      fromBuildEnv: Binary
+    - pkg: edbotice
+      fromBuildEnv: Binary
+    - pkg: vfobot
+      fromBuildEnv: Binary
+    - pkg: filesequence
+      fromBuildEnv: Binary
+    - pkg: python-pyyaml
+      fromBuildEnv: Binary
+    - pkg: itview-vnp3browser
+      fromBuildEnv: Binary
+    - pkg: resolution-table
+      fromBuildEnv: Binary
+    - pkg: sg-note-service
+      fromBuildEnv: Binary
+    - pkg: python-stomp-py
+      fromBuildEnv: Binary
+
+  environment:
+    - set: PYTHONPATH
+      value: ''
+    - set: RV_HOME
+      value: '/spfs/lib/openrv'
+    - set: RV_SUPPORT_PATH
+      value: '$RV_HOME/rpa'

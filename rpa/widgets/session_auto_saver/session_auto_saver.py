@@ -2,7 +2,7 @@ from typing import List
 try:
     from PySide2 import QtCore, QtGui, QtWidgets
     from PySide2.QtWidgets import QAction
-except ImportError:
+except:
     from PySide6 import QtCore, QtGui, QtWidgets
     from PySide6.QtGui import QAction
 import os
@@ -36,7 +36,7 @@ class AutoSavePopup(QtWidgets.QMessageBox):
 
 class SessionAutoSaver(QtWidgets.QWidget):
 
-    def __init__(self, rpa, main_window, auto_save_directory=None, include_feedback=True):
+    def __init__(self, rpa, main_window, auto_save_directory=None, include_feedback=True, hide_checkbox=False):
         super().__init__(main_window)
         self.__rpa = rpa
         self.__main_window = main_window
@@ -62,7 +62,6 @@ class SessionAutoSaver(QtWidgets.QWidget):
 
         dont_show_auto_save_popup_box_pref = self.__rpa.config_api.value(
             self.__dont_show_auto_save_popup_pref_key, False, type=bool)
-
         self.__dont_show_auto_save_popup_chk_box = \
             QtWidgets.QCheckBox("Don't Show Auto Save Popup")
         self.__dont_show_auto_save_popup_chk_box.setChecked(
@@ -113,7 +112,7 @@ class SessionAutoSaver(QtWidgets.QWidget):
         main_window.installEventFilter(self)
 
         auto_saves = self.__get_auto_saves()
-        if auto_saves and not dont_show_auto_save_popup_box_pref:
+        if auto_saves and not dont_show_auto_save_popup_box_pref and not hide_checkbox:
             auto_save_popup = AutoSavePopup()
             auto_save_popup.SIG_PREF_CHANGED.connect(
                 self.__update_dont_show_auto_save_popup_pref)
@@ -141,7 +140,8 @@ class SessionAutoSaver(QtWidgets.QWidget):
     def __save_session(self):
         is_playing, _ = self.__rpa.timeline_api.get_playing_state()
         if not is_playing:
-            self.__otio_writer.write_otio_file(self.__auto_save_file)
+            playlist_ids = self.__rpa.session_api.get_playlists()
+            self.__otio_writer.write_to_file(playlist_ids, self.__auto_save_file)
             current_time = datetime.now().strftime("%H:%M:%S")
             self.__last_saved_line_edit.setText(current_time)
 

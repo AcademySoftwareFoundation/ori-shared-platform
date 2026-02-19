@@ -1,6 +1,6 @@
 try:
     from PySide2 import QtCore, QtGui, QtWidgets
-except ImportError:
+except:
     from PySide6 import QtCore, QtGui, QtWidgets
 from rpa.widgets.color_corrector.view.color_corrector import ColorCorrectionAndGrading
 import rpa.widgets.color_corrector.view.resources.resources

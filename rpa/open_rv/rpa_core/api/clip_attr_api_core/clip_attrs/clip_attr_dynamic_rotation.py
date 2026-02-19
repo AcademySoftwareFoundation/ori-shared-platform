@@ -31,18 +31,20 @@ class ClipAttrDynamicRotation:
 
     def get_value(self, source_group:str)->float:
         value = self.default_value
-        if rvc.nodeExists(f"{source_group}_stack_t_{source_group}"):
+        if rvc.nodeExists(f"{source_group}_secondary_transform"):
             value = rvc.getFloatProperty(
-                f"{source_group}_stack_t_{source_group}.transform.rotate")[0]
+                f"{source_group}_secondary_transform.transform.rotate")[0]
         return value
 
     def _set_value(self, source_group:str, value:float):
-        if rvc.nodeExists(f"{source_group}_stack_t_{source_group}"):
+        if rvc.nodeExists(f"{source_group}_secondary_transform"):
             current_value = rvc.getFloatProperty(
-            f"{source_group}_stack_t_{source_group}.transform.rotate")[0]
+            f"{source_group}_secondary_transform.transform.rotate")[0]
             if current_value != value:
                 rvc.setFloatProperty(
-                    f"{source_group}_stack_t_{source_group}.transform.rotate", [value])
+                    f"{source_group}_secondary_transform.transform.rotate", [value])
+                return True
+        return False
 
 
 ClipAttrApiCore.get_instance()._add_attr(ClipAttrDynamicRotation())

@@ -1,7 +1,8 @@
-import numpy as np
 from rpa.open_rv.rpa_core.api.clip_attr_api_core.clip_attr_api_core \
     import ClipAttrApiCore
 from rv import commands
+from rpa.open_rv.rpa_core.api.clip_attr_api_core.clip_attrs.utils \
+    import get_key_in, get_key_out, validate_cross_dissolve, has_frame_edits
 
 
 class ClipAttrKeyOut:
@@ -32,9 +33,19 @@ class ClipAttrKeyOut:
 
     @property
     def dependent_attr_ids(self):
-        return ["cut_length", "length_diff"]
+        return ["cut_length", "length_diff", "dissolve_start", "dissolve_length"]
 
     def set_value(self, source_group:str, value:int)->bool:
+
+        if has_frame_edits(source_group):
+            print("key_out change is not allowed when frame edits are present")
+            return False
+
+        key_in = get_key_in(source_group)
+        if value < key_in:
+            print("key_out change is not allowed when smaller than key_in")
+            return False
+
         if not isinstance(value, int):
             value = self.default_value
 
@@ -42,25 +53,12 @@ class ClipAttrKeyOut:
             commands.newProperty(f"{source_group}_source.custom.keyout", commands.IntType, 1)
 
         commands.setIntProperty(f"{source_group}_source.custom.keyout", [value], True)
+
+        validate_cross_dissolve(source_group)
         return True
 
     def get_value(self, source_group:str)->int:
-        cut_out = commands.getIntProperty(f"{source_group}_source.cut.out")[0]
-        smi = commands.sourceMediaInfo(f"{source_group}_source")
-        key_out = smi.get("endFrame") if cut_out == (np.iinfo(np.int32).max) else cut_out
-
-        if not commands.propertyExists(f"{source_group}_source.custom.keyout"):
-            commands.newProperty(f"{source_group}_source.custom.keyout", commands.IntType, 1)
-            commands.setIntProperty(f"{source_group}_source.custom.keyout", [key_out], True)
-            return key_out
-        else:
-            initial_value = commands.getIntProperty(f"{source_group}_source.custom.keyout")
-            end_frame = smi.get("endFrame")
-            if initial_value is None:
-                commands.setIntProperty(f"{source_group}_source.custom.keyout", [end_frame], True)
-
-            key_out = commands.getIntProperty(f"{source_group}_source.custom.keyout")[0]
-            return key_out
+        return get_key_out(source_group)
 
 
 ClipAttrApiCore.get_instance()._add_attr(ClipAttrKeyOut())

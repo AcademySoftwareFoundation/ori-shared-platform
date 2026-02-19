@@ -1,0 +1,7 @@
+{
+  "class_name": "BackgroundModes",
+  "itview_version": "1.0.0",
+  "author_email": "itview-dev@imageworks.com",
+  "plugin_name": "Background Modes",
+  "description": "Controls all background modes: picture in picture, side by side and top to bottom"
+}

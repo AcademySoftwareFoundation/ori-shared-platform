@@ -1,7 +1,7 @@
 try:
     from PySide2 import QtGui, QtCore
     from PySide2.QtWidgets import QAction, QActionGroup
-except ImportError:
+except:
     from PySide6 import QtGui, QtCore
     from PySide6.QtGui import QAction, QActionGroup
 from rpa.widgets.annotation import svg
@@ -90,6 +90,20 @@ class Actions(QtCore.QObject):
         self.paste_annotations.setIcon(
                 QtGui.QIcon(QtGui.QPixmap(":paste128.png")))
         self.paste_annotations.setToolTip("Paste Annotations")
+
+        self.annotation_ghosting = QAction("Annotation Ghosting")
+        self.annotation_ghosting.setCheckable(True)
+        self.annotation_ghosting.setChecked(False)
+        self.annotation_ghosting.setToolTip("Annotation Ghosting")
+        self.annotation_ghosting.setIcon(
+            QtGui.QIcon(QtGui.QPixmap(":ghost.png")))
+
+        self.annotation_holding = QAction("Annotation Holding")
+        self.annotation_holding.setCheckable(True)
+        self.annotation_holding.setChecked(False)
+        self.annotation_holding.setToolTip("Annotation Holding")
+        self.annotation_holding.setIcon(
+            QtGui.QIcon(QtGui.QPixmap(":hold.png")))
 
     def __create_size_setters(self):
         self.draw_sizes = {}

@@ -2,7 +2,7 @@ import json
 
 try:
     from PySide2 import QtCore, QtGui
-except ImportError:
+except:
     from PySide6 import QtCore, QtGui
 import rpa.widgets.session_manager.playlists_controller.view.resources.resources
 

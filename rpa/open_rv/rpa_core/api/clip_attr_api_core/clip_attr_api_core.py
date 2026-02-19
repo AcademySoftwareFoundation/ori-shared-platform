@@ -1,7 +1,7 @@
 from typing import List
 try:
     from PySide2 import QtCore
-except ImportError:
+except:
     from PySide6 import QtCore
 
 

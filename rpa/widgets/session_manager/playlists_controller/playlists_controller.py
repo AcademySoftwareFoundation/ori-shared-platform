@@ -1,6 +1,6 @@
 try:
     from PySide2 import QtCore
-except ImportError:
+except:
     from PySide6 import QtCore
 from rpa.widgets.session_manager.playlists_controller.view.view \
     import View

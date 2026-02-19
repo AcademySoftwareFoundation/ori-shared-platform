@@ -1,7 +1,7 @@
 try:
     from PySide2 import QtCore, QtGui, QtWidgets
     from PySide2.QtWidgets import QAction
-except ImportError:
+except:
     from PySide6 import QtCore, QtGui, QtWidgets
     from PySide6.QtGui import QAction
 from rpa.widgets.session_manager.toolbars.icons import icons
@@ -21,8 +21,8 @@ class PlaylistsToolbar(QtWidgets.QToolBar):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.setObjectName("Session Controller Playlists Toolbar")
-        self.setWindowTitle("Session Controller Playlists Toolbar")
+        self.setObjectName("Session Manager Playlists Toolbar")
+        self.setWindowTitle("Session Manager Playlists Toolbar")
         self.setOrientation(QtCore.Qt.Vertical)
 
         make_icon = \
@@ -35,43 +35,42 @@ class PlaylistsToolbar(QtWidgets.QToolBar):
         self.addSeparator()
 
         create = QAction(
-            make_icon(":plus28.png"), "Create playlist", self)
+            make_icon(":plus28.png"), "Create Playlist", self)
         create.triggered.connect(self.SIG_CREATE)
         self.addAction(create)
 
         self.__delete = QAction(
-            make_icon(":minus28.png"), "Delete selected playlists", self)
+            make_icon(":minus28.png"), "Delete Selected Playlists", self)
         self.__delete.triggered.connect(self.__delete_triggered)
         self.addAction(self.__delete)
 
         move_top = QAction(
-            make_icon(":topArrow28.png"), "Move selected playlists top", self)
+            make_icon(":topArrow28.png"), "Move Selected Playlists Top", self)
         move_top.triggered.connect(self.SIG_MOVE_TOP)
         self.addAction(move_top)
 
         move_up = QAction(
-            make_icon(":upArrow28.png"), "Move selected playlists up", self)
+            make_icon(":upArrow28.png"), "Move Selected Playlists Up", self)
         move_up.triggered.connect(self.SIG_MOVE_UP)
         self.addAction(move_up)
 
         move_down = QAction(make_icon(":downArrow28.png"),
-            "Move selected playlists down", self)
+            "Move Selected Playlists Down", self)
         move_down.triggered.connect(self.SIG_MOVE_DOWN)
         self.addAction(move_down)
 
         move_bottom = QAction(make_icon(":bottomArrow28.png"),
-            "Move selected playlists bottom", self)
+            "Move Selected Playlists Bottom", self)
         move_bottom.triggered.connect(self.SIG_MOVE_BOTTOM)
         self.addAction(move_bottom)
 
         self.addSeparator()
 
-        clear = QAction(make_icon(":minus28.png"),
+        clear = QAction(make_icon(":broom1.png"),
             "Clear Session", self)
         clear.triggered.connect(self.__clear)
         self.addAction(clear)
 
-        self.addSeparator()
         self.addSeparator()
 
     def inject_create_btns(
@@ -109,3 +108,7 @@ class PlaylistsToolbar(QtWidgets.QToolBar):
             QtWidgets.QMessageBox.No)
         if response == QtWidgets.QMessageBox.Yes:
             self.SIG_CLEAR.emit()
+
+    def inject_button(self, actions: List[Union[QtWidgets.QWidget, QAction]]):
+        for action in actions:
+            self.addAction(action)

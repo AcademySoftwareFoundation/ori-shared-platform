@@ -2,7 +2,7 @@ import os
 try:
     from PySide2 import QtCore, QtWidgets
     from PySide2.QtWidgets import QAction
-except ImportError:
+except:
     from PySide6 import QtCore, QtWidgets
     from PySide6.QtGui import QAction
 
@@ -26,6 +26,7 @@ from rpa.widgets.session_io.session_io import SessionIO
 from rpa.widgets.media_path_overlay.media_path_overlay import MediaPathOverlay
 from rpa.widgets.session_auto_saver.session_auto_saver import SessionAutoSaver
 from rpa.widgets.frame_editor.frame_editor import FrameEditor
+from rpa.widgets.help_menu.help_menu import HelpMenu
 # from rpa.widgets.playlist_creator.playlist_creator import PlaylistCreator
 
 from rpa.widgets.test_widgets.test_session_api import TestSessionApi
@@ -271,6 +272,8 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
         commands.unbind("default", "global", 'key-down--~')
         commands.unbind("default", "global", 'key-down--f2')
 
+        commands.unbind("default", "global", 'key-down--shift--c')
+
         self.__viewport_widget.installEventFilter(self)
 
         self.__session_manager_dock = None
@@ -327,6 +330,10 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
                 action.triggered.connect(self.__replace_rpa_session)
                 sub_menu.addAction(action)
 
+                action = QAction("Clear RPA Session", parent=self.__main_window)
+                action.triggered.connect(self.__clear_rpa_session)
+                sub_menu.addAction(action)
+
             if action and action.text() == "Control":
                 sub_menu = action.menu()
                 sub_actions =  sub_menu.actions()[:]
@@ -347,7 +354,9 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
                         rpa_widgets_menu = sub_action
                     if sub_action.text() == "Timeline Magnifier":
                         action_to_insert_before = sub_action
-                    if sub_action.text() in [
+                    if sub_action.text().strip() == "Region Cache":
+                        sub_action.setShortcut("")
+                    if sub_action.text().strip() in [
                     "Default Views", "   Sequence", "   Replace", "   Over", "   Add",
                     "   Difference", "   Difference (Inverted)", "   Tile",
                     "Menu Bar", "Top View Toolbar", "Bottom View Toolbar",
@@ -408,9 +417,8 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
         action.triggered.connect(self.__show_session_assistant)
         rpa_widgets_menu.addAction(action)
 
-        action = QAction("RPA Interpreter", parent=self.__main_window)
-        action.triggered.connect(self.__show_rpa_interpreter)
-        rpa_widgets_menu.addAction(action)
+        rpa_interpretter_action = QAction("RPA Interpreter", parent=self.__main_window)
+        rpa_interpretter_action.triggered.connect(self.__show_rpa_interpreter)
 
         action = QAction("Show FStop Slider ", parent=self.__main_window)
         action.triggered.connect(self.__show_fstop_slider)
@@ -431,6 +439,10 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
         action = QAction("Frame Editor", parent=self.__main_window)
         action.triggered.connect(self.__show_frame_editor)
         rpa_widgets_menu.addAction(action)
+
+        help_menu = HelpMenu(self.__rpa, self.__main_window)
+        help_menu.addAction(rpa_interpretter_action)
+        rpa_widgets_menu.addMenu(help_menu)
 
         # action = QAction("Playlists Creator", parent=self.__main_window)
         # action.triggered.connect(self.__show_playlists_creator)
@@ -473,6 +485,9 @@ class RpaWidgetsMode(QtCore.QObject, rvtypes.MinorMode):
 
     def __replace_rpa_session(self):
         self.__session_io.replace_session_action.trigger()
+
+    def __clear_rpa_session(self):
+        self.__session_io.clear_session_action.trigger()
 
     def _add_clips(self, event):
         self.__add_clips()

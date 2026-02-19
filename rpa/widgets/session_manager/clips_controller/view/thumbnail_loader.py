@@ -2,13 +2,13 @@ import time
 
 
 try:
-    from PySide2.QtCore import QObject, QUrl, QByteArray, Qt
+    from PySide2.QtCore import QObject, QUrl, QByteArray, QRect, QSize, QPoint, Qt
     from PySide2.QtNetwork import QNetworkAccessManager, QNetworkRequest
-    from PySide2.QtGui import QImage, QPixmap, QColor
-except ImportError:
-    from PySide6.QtCore import QObject, QUrl, QByteArray, Qt
+    from PySide2.QtGui import QImage, QPixmap, QColor, QPainter, QPolygon
+except:
+    from PySide6.QtCore import QObject, QUrl, QByteArray, QRect, QSize, QPoint, Qt
     from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest
-    from PySide6.QtGui import QImage, QPixmap, QColor
+    from PySide6.QtGui import QImage, QPixmap, QColor, QPainter, QPolygon
 
 class ThumbnailLoader(QObject):
     def __init__(self):
@@ -47,3 +47,30 @@ class ThumbnailLoader(QObject):
                 pixmap = QPixmap.fromImage(image)
             self.__cache[url] = pixmap
         callback(self.__cache[url])
+
+    def create_title_thumbnail(
+            self, width:int, height:int, bkg_color, text_color=None):
+        pixmap = QPixmap(QSize(width, height))
+        bkg_color = QColor.fromRgbF(*bkg_color)
+        pixmap.fill(bkg_color)
+
+        if text_color is None:
+            return pixmap
+
+        side_len = 18
+        rect = QRect(0, 0, width, height)
+        painter = QPainter(pixmap)
+
+        tl_corner_triangle = QPolygon([
+            QPoint(rect.left(),rect.top()),
+            QPoint(rect.left() + side_len, rect.top()),
+            QPoint(rect.left(), rect.top() + side_len)])
+
+        text_color = QColor.fromRgbF(*text_color)
+        painter.setBrush(text_color)
+        painter.setPen(Qt.NoPen)
+        painter.drawPolygon(tl_corner_triangle)
+        painter.end()
+
+        return pixmap
+

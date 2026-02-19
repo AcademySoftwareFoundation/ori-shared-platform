@@ -2,7 +2,7 @@ import math
 
 try:
     from PySide2 import QtCore, QtGui, QtWidgets
-except ImportError:
+except:
     from PySide6 import QtGui, QtCore, QtWidgets
 
 from rpa.widgets.image_controller.actions import Actions
@@ -63,7 +63,7 @@ class ImageController(QtCore.QObject):
         self.actions.rotate_up_10.triggered.connect(lambda: self.__update_rotation(self.__current_rotation_val + 10))
         self.actions.rotate_down_10.triggered.connect(lambda: self.__update_rotation(self.__current_rotation_val - 10))
         self.actions.rotation_slider.triggered.connect(lambda state:self.__toggle_image_rot_slider(state))
-        self.image_rot_slider.SIG_SLIDER_VALUE_CHANGED.connect(self.__set_image_rot_value)
+        self.image_rot_slider.SIG_SLIDER_VALUE_CHANGED.connect(self.set_image_rot_value)
         self.image_rot_slider.SIG_RESET.connect(lambda: self.__update_rotation(0))
         self.image_rot_slider.SIG_TOOLBAR_VISIBLE.connect(self.__set_image_rot_visibility)
 
@@ -177,7 +177,7 @@ class ImageController(QtCore.QObject):
         else:
             self.image_rot_slider.hide()
 
-    def __set_image_rot_value(self, angle):
+    def set_image_rot_value(self, angle):
         if angle is None: return
         self.__viewport_api.set_rotation(angle)
 

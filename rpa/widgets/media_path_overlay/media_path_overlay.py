@@ -1,7 +1,7 @@
 from typing import List
 try:
     from PySide2 import QtCore, QtWidgets
-except ImportError:
+except:
     from PySide6 import QtCore, QtWidgets
 import os
 
@@ -9,7 +9,7 @@ import os
 class MediaPathOverlay(QtWidgets.QWidget):
 
     def __init__(self, rpa, main_window):
-        super().__init__(main_window)        
+        super().__init__(main_window)
         self.__rpa = rpa
 
         html_overlay = {
@@ -32,13 +32,13 @@ class MediaPathOverlay(QtWidgets.QWidget):
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.__show_media_path_btn)
         self.setLayout(layout)
-        
+
         self.__show_media_path_btn.toggled.connect(self.__on_toggled)
         self.__show_media_path_btn.toggled.connect(self.__toggle_media_path)
         self.__rpa.session_api.SIG_CURRENT_CLIP_CHANGED.connect(
             self.__clip_changed)
-    
-    def __clip_changed(self):        
+
+    def __clip_changed(self):
         self.__rpa.viewport_api.set_html_overlay(
             self.__overlay_id, {"html":self.__get_html()})
 
@@ -46,7 +46,7 @@ class MediaPathOverlay(QtWidgets.QWidget):
         # Update style based on state
         self.__show_media_path_btn.setStyleSheet(self._get_style(checked))
 
-    def __toggle_media_path(self, checked):        
+    def __toggle_media_path(self, checked):
         self.__rpa.viewport_api.set_html_overlay(self.__overlay_id, {
             "is_visible":checked,
             "html":self.__get_html()

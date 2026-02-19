@@ -1,0 +1,50 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource>
+        <file alias="applications-graphics.png">./icons/applications-graphics.png</file>
+        <file alias="edit-clear.png">./icons/edit-clear.png</file>
+        <file alias="edit-undo.png">./icons/edit-undo.png</file>
+        <file alias="edit-redo.png">./icons/edit-redo.png</file>
+        <file alias="audio-volume-muted.png">./icons/audio-volume-muted.png</file>
+        <file alias="audio-volume-high.png">./icons/audio-volume-high.png</file>
+        <file alias="go-next.png">./icons/go-next.png</file>
+        <file alias="go-previous.png">./icons/go-previous.png</file>
+        <file alias="arrow-right-double.png">./icons/arrow-right-double.png</file>
+        <file alias="arrow-left-double.png">./icons/arrow-left-double.png</file>
+        <file alias="help-hint.png">./icons/help-hint.png</file>
+        <file alias="applications-multimedia.png">./icons/applications-multimedia.png</file>
+        <file alias="fill-color.png">./icons/fill-color.png</file>
+        <file alias="preferences-desktop-user.png">./icons/preferences-desktop-user.png</file>
+        <file alias="frame-overlay.png">./icons/frame-overlay.png</file>
+        <file alias="text-overlay.png">./icons/text-overlay.png</file>
+        <file alias="all-overlay.png">./icons/all-overlay.png</file>
+        <file alias="applications-media-scrub.png">./icons/applications-media-scrub.png</file>
+        <file alias="insert-image.png">./icons/insert-image.png</file>
+        <file alias="draw-freehand.png">./icons/draw-freehand.png</file>
+        <file alias="draw-eraser.png">./icons/draw-eraser.png</file>
+        <file alias="color-picker.png">./icons/color-picker.png</file>
+        <file alias="orient-horizontal.png">./icons/orient-horizontal.png</file>
+        <file alias="orient-vertical.png">./icons/orient-vertical.png</file>
+        <file alias="contrast.png">./icons/contrast.png</file>
+        <file alias="brush_0.png">./icons/brush_0.png</file>
+        <file alias="brush_1.png">./icons/brush_1.png</file>
+        <file alias="brush_2.png">./icons/brush_2.png</file>
+        <file alias="brush_3.png">./icons/brush_3.png</file>
+        <file alias="brush_4.png">./icons/brush_4.png</file>
+        <file alias="brush_5.png">./icons/brush_5.png</file>
+        <file alias="brush_6.png">./icons/brush_6.png</file>
+        <file alias="brush_7.png">./icons/brush_7.png</file>
+        <file alias="brush_8.png">./icons/brush_8.png</file>
+        <file alias="brush_9.png">./icons/brush_9.png</file>
+        <file alias="eraser_0.png">./icons/eraser_0.png</file>
+        <file alias="eraser_1.png">./icons/eraser_1.png</file>
+        <file alias="eraser_2.png">./icons/eraser_2.png</file>
+        <file alias="eraser_3.png">./icons/eraser_3.png</file>
+        <file alias="eraser_4.png">./icons/eraser_4.png</file>
+        <file alias="eraser_5.png">./icons/eraser_5.png</file>
+        <file alias="eraser_6.png">./icons/eraser_6.png</file>
+        <file alias="eraser_7.png">./icons/eraser_7.png</file>
+        <file alias="eraser_8.png">./icons/eraser_8.png</file>
+        <file alias="eraser_9.png">./icons/eraser_9.png</file>
+    </qresource>
+</RCC>

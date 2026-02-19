@@ -1,0 +1,7 @@
+{
+  "class_name": "ViewController",
+  "itview_version": "1.0.0",
+  "author_email": "itview-dev@imageworks.com",
+  "plugin_name": "View Controller",
+  "description": "Collection of view operations like zoom and pan"
+}

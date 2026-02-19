@@ -7,7 +7,7 @@ Manage viewport transforms and overlays.
 
 try:
     from PySide2 import QtCore
-except ImportError:
+except:
     from PySide6 import QtCore
 from typing import List, Optional, Tuple, Dict
 from rpa.delegate_mngr import DelegateMngr
@@ -34,7 +34,7 @@ class ViewportApi(QtCore.QObject):
 
         .. code-block:: python
 
-            html_overaly = {
+            html_overlay = {
                 "html": "<span style='color: white; font-size:42px'>Hello RPA!</span>",
                 "x": 0.5,
                 "y": 0.5,
@@ -55,7 +55,7 @@ class ViewportApi(QtCore.QObject):
         overlay can be controller.
 
         Args:
-            html_overaly (Dict): Data required to create HTML overlay.
+            html_overlay (Dict): Data required to create HTML overlay.
 
         Returns:
             (str): Unique id of the created HTML overlay.
@@ -74,7 +74,7 @@ class ViewportApi(QtCore.QObject):
 
         .. code-block:: python
 
-            html_overaly = {
+            html_overlay = {
                 "html": "<span style='color: white; font-size:42px'>Hello RPA!</span>",
                 "x": 0.5,
                 "y": 0.5,
@@ -227,6 +227,16 @@ class ViewportApi(QtCore.QObject):
             bool: True if successful else False
         """
         return self.__delegate_mngr.call(self.delete_opengl_overlays, [ids])
+
+    def get_mask(self)->str:
+        """
+        Get the current mask.
+
+        Returns:
+            (str) : The current mask definition.
+                When None is returned, mask layer is off.
+        """
+        return self.__delegate_mngr.call(self.get_mask)
 
     def set_mask(self, mask:Optional[str])->bool:
         """
@@ -394,6 +404,18 @@ class ViewportApi(QtCore.QObject):
         """
         return self.__delegate_mngr.call(self.get_rotation)
 
+    def is_flipped_x(self)->bool:
+        """
+        Return whether the viewport is flipped along the X axis.
+
+        This method indicates if the viewport's orientation has been mirrored
+        horizontally.
+
+        Returns:
+            bool: True if the viewport is flipped on the X axis, False otherwise.
+        """
+        return self.__delegate_mngr.call(self.is_flipped_x)
+
     def flip_x(self, state:bool)->bool:
         """
         Flip the current view horizontally or default to original view,
@@ -406,6 +428,18 @@ class ViewportApi(QtCore.QObject):
             (bool) : True if success False otherwise
         """
         return self.__delegate_mngr.call(self.flip_x, [state])
+
+    def is_flipped_y(self)->bool:
+        """
+        Return whether the viewport is flipped along the Y axis.
+
+        This method indicates if the viewport's orientation has been mirrored
+        vertically.
+
+        Returns:
+            bool: True if the viewport is flipped on the Y axis, False otherwise.
+        """
+        return self.__delegate_mngr.call(self.is_flipped_y)
 
     def flip_y(self, state:bool)->bool:
         """
@@ -572,6 +606,17 @@ class ViewportApi(QtCore.QObject):
         """
         return self.__delegate_mngr.call(
             self.set_cross_hair_cursor, [position])
+
+    def get_viewport_dimensions(self):
+        """
+        Get viewport dimensions
+
+        Returns:
+            (float, float): width and height
+        """
+        return self.__delegate_mngr.call(
+            self.get_viewport_dimensions
+        )
 
     def toggle_presentation_mode(self):
         """Toggles presentation mode.

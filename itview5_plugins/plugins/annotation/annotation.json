@@ -1,0 +1,7 @@
+{
+    "class_name": "Annotation",
+    "itview_version": "1.0.0",
+    "author_email": "itview-dev@imageworks.com",
+    "plugin_name": "Annotation",
+    "description": "Provides tools for drawing annotations on media"
+}

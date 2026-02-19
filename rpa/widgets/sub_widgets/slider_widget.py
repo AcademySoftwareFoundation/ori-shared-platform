@@ -2,7 +2,7 @@
 """Module for the slider."""
 try:
     from PySide2 import QtGui, QtCore, QtWidgets
-except ImportError:
+except:
     from PySide6 import QtGui, QtCore, QtWidgets
 import itertools, math
 

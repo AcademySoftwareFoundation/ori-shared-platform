@@ -51,5 +51,6 @@ class ClipAttrMediaPath:
             new_media_paths = [value]
         commands.setStringProperty(
             f"{source_group}_source.media.movie", new_media_paths, True)
+        return True
 
 ClipAttrApiCore.get_instance()._add_attr(ClipAttrMediaPath())
