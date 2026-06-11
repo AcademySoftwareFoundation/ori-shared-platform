@@ -4,33 +4,100 @@
 #   at path: .github/workflows/trigger-registry-rebuild.yml
 #
 # PURPOSE:
-#   When a PR that touches the plugins/ directory is merged to main,
-#   this workflow fires a workflow_dispatch on ori-shared-platform-website
-#   so the registry site rebuilds immediately (rather than waiting for the
-#   daily scheduled rebuild at 06:00 UTC).
+#   When a PR that touches the plugins/ directory is merged to main:
+#     1. Syncs any changed plugin registry/ folders to the corresponding
+#        content/plugins/ directories in ori-shared-platform-website.
+#     2. Fires a workflow_dispatch on ori-shared-platform-website so the
+#        registry site rebuilds immediately.
+#
+#   Plugin authors only need to submit one PR to ori-shared-platform.
+#   Each plugin directory should include a registry/ subfolder:
+#
+#     plugins/my-plugin/
+#     ├── src/               ← plugin source code
+#     ├── README.md
+#     ├── package.json
+#     └── registry/
+#         ├── index.md       ← Hugo content page (frontmatter + docs)
+#         └── feature.svg    ← thumbnail shown on the registry card
 #
 # SETUP REQUIRED (one-time, by an org admin):
 #   1. Create a GitHub Fine-Grained Personal Access Token (PAT) with:
 #        - Repository access: ori-shared-platform-website
-#        - Permissions: Actions (read & write)
+#        - Permissions:
+#            Actions:  Read & write  (to dispatch deploy.yml)
+#            Contents: Read & write  (to push synced registry content)
 #   2. Add the token as a repository secret in ori-shared-platform:
 #        Settings → Secrets and variables → Actions → New repository secret
 #        Name:  REGISTRY_REBUILD_TOKEN
 #        Value: <the PAT>
+#
+# NOTE: Replace with a GitHub App when org admin access is available.
+#       A GitHub App token does not expire and is not tied to an individual.
+#       See: https://github.com/actions/create-github-app-token
 # ---------------------------------------------------------------------------
 
-name: Trigger Registry Rebuild
+name: Sync Plugin Registry & Trigger Rebuild
 
 on:
   push:
     branches: [main]
     paths:
-      - 'plugins/**'   # Only trigger when the plugins/ directory changes
+      - 'plugins/**'
 
 jobs:
-  trigger:
+  sync-and-rebuild:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout ori-shared-platform
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Needed to diff HEAD against its parent
+
+      - name: Sync changed registry/ folders to ori-shared-platform-website
+        env:
+          GH_TOKEN: ${{ secrets.REGISTRY_REBUILD_TOKEN }}
+        run: |
+          # Find plugins whose registry/ content changed in this push
+          changed_plugins=$(git diff --name-only HEAD~1 HEAD \
+            | grep '^plugins/.*/registry/' \
+            | sed 's|/registry/.*||' \
+            | sort -u)
+
+          if [ -z "$changed_plugins" ]; then
+            echo "No registry/ content changed — skipping sync"
+            exit 0
+          fi
+
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          git clone \
+            https://x-access-token:${GH_TOKEN}@github.com/AcademySoftwareFoundation/ori-shared-platform-website.git \
+            /tmp/website
+
+          for plugin_path in $changed_plugins; do
+            plugin_name=$(basename "$plugin_path")
+            src="${plugin_path}/registry"
+            dst="/tmp/website/content/plugins/${plugin_name}"
+
+            if [ -d "$src" ]; then
+              mkdir -p "$dst"
+              cp -r "$src/." "$dst/"
+              echo "Synced: $plugin_name"
+            fi
+          done
+
+          cd /tmp/website
+          git add content/plugins/
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: sync plugin registry content from ori-shared-platform"
+            git push
+          fi
+
       - name: Dispatch rebuild to ori-shared-platform-website
         uses: actions/github-script@v8
         with:
