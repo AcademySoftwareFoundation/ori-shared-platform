@@ -5,14 +5,15 @@ date        = 2026-06-11T00:00:00Z
 draft       = false
 
 version = "1.0.0"
-author  = "test-contributor"
+author  = "erikstrauss"
 license = "Apache-2.0"
 
 host_app = ["xStudio"]
 tags     = ["annotation", "export", "pipeline", "workflow"]
 
 [params]
-  repoPath = "plugins/xStudio/xstudio-review-notes"
+  repoUrl   = "https://github.com/erikstrauss/xstudio-review-notes"
+  repoOwner = "erikstrauss"
 +++
 
 ## Overview
@@ -26,8 +27,6 @@ Supported output formats:
 - **JSON** — structured per-shot, per-frame annotation data
 - **CSV** — flat spreadsheet-friendly format for editorial and production tracking
 
-This plugin was created as a test case for the ORI plugin registry deployment workflow.
-
 ## Requirements
 
 | Requirement | Version |
@@ -38,16 +37,12 @@ This plugin was created as a test case for the ORI plugin registry deployment wo
 
 ## Installation
 
-1. Download the plugin package from the repository (see link above).
-2. Copy the `xstudio-review-notes/` folder into your xStudio plugin path:
+1. Download or clone the plugin from the repository linked above.
+2. Copy the plugin folder into your xStudio plugin path:
    - **macOS**: `~/Library/Application Support/xStudio/plugins/`
    - **Linux**: `~/.xstudio/plugins/`
 3. Restart xStudio.
 4. Open **Preferences → Plugins** and enable **Review Notes Exporter**.
-
-### Verify
-
-After restarting, a **Notes Export** panel should appear in the **Tools** menu.
 
 ## Usage
 
