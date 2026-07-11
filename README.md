@@ -21,3 +21,10 @@ RPA is an abstraction layer between the review widgets you create and the review
 For more information about our initiative itself and its projects please see http://aswf.io/openreviewinitiative
 
 Join the conversation on the ASWF slack #open-review-initiative
+
+## Licensing
+
+This repository uses two licences:
+
+- **Source code** — [Apache License 2.0](./LICENSE)
+- **Non-code content** (documentation, registry entries, images, and other assets) — [Creative Commons Attribution 4.0 International](./LICENSE-CC-BY-4.0) (CC-BY-4.0)
