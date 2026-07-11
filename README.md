@@ -7,6 +7,14 @@ Here you will find a growing collection of code meant to be leveraged across our
 
 Currently in this repository:
 
+## Open Review Plugin Registry
+
+A community index of plugins for [OpenRV](https://github.com/AcademySoftwareFoundation/OpenRV) and [xStudio](https://github.com/AcademySoftwareFoundation/xstudio). Plugin entries live under `plugins/` and are published automatically to the [registry website](https://academysoftwarefoundation.github.io/ori-shared-platform-website/).
+
+- **Browse plugins** — [registry website](https://academysoftwarefoundation.github.io/ori-shared-platform-website/plugins/)
+- **Submit a plugin** — see [ACCEPTANCE-CRITERIA.md](./ACCEPTANCE-CRITERIA.md) for eligibility, then follow the [submission guide](https://academysoftwarefoundation.github.io/ori-shared-platform-website/contributing/)
+- **Report a listing issue** — [open a GitHub Issue](https://github.com/AcademySoftwareFoundation/ori-shared-platform/issues) or email [plugins@openreviewinitiative.org](mailto:plugins@openreviewinitiative.org)
+
 ## RPA (Review Plugin API)
 
 To empower VFX and Animation studios to use their custom built review workflows and tools across any review-playback system (such as OpenRV or xStudio), RPA provides a unified collection of API modules and widgets.

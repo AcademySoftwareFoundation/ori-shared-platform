@@ -4,13 +4,13 @@
 # When a PR touches a plugin directory, GitHub automatically requests
 # a review from the listed owner(s).
 #
-# ENFORCEMENT NOTE (pending org admin action):
+# ENFORCEMENT NOTE (pending org admin action — tracked in issue #62):
 #   CODEOWNERS review requests are advisory by default. To require plugin
 #   owners to approve changes to their own listings, a repo admin must enable:
 #     Settings > Branches > Branch protection rule for main
 #     ☑ Require review from Code Owners
 #
-# GLOBAL FALLBACK:
+# GLOBAL FALLBACK (tracked in issue #62):
 #   Replace the team slug below with the actual ASWF GitHub team for
 #   ori-shared-platform committers. Until then, committer review is
 #   enforced only by convention.
@@ -18,7 +18,5 @@
 # * @AcademySoftwareFoundation/ori-shared-platform-committers
 
 # ── OpenRV plugins ────────────────────────────────────────────────────────────
-/plugins/OpenRV/rv-frame-compare/          @erikstrauss
+/plugins/OpenRV/filesystem_browser/        @richardssam
 
-# ── xStudio plugins ───────────────────────────────────────────────────────────
-/plugins/xStudio/xstudio-review-notes/     @erikstrauss
