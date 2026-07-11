@@ -10,7 +10,7 @@
 #     Settings > Branches > Branch protection rule for main
 #     ☑ Require review from Code Owners
 #
-# GLOBAL FALLBACK:
+# GLOBAL FALLBACK (tracked in issue #61):
 #   Replace the team slug below with the actual ASWF GitHub team for
 #   ori-shared-platform committers. Until then, committer review is
 #   enforced only by convention.
@@ -18,7 +18,5 @@
 # * @AcademySoftwareFoundation/ori-shared-platform-committers
 
 # ── OpenRV plugins ────────────────────────────────────────────────────────────
-/plugins/OpenRV/rv-frame-compare/          @erikstrauss
+/plugins/OpenRV/filesystem_browser/        @richardssam
 
-# ── xStudio plugins ───────────────────────────────────────────────────────────
-/plugins/xStudio/xstudio-review-notes/     @erikstrauss
